@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Newstogram - Turn any news into Instagram post</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- html2canvas library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <button class="toggle-controls">☰</button>
+    <!-- rest of the code -->
+  
+    <!-- Control Panel -->
+    <div class="controls">
+      <h1>Newstogram</h1>
+      <p>Turn any news into instagram post</p>
+      
+      <!-- API URL input -->
+      <label for="apiUrl">Masukkan URL API:</label>
+      <input type="text" id="apiUrl" class="text-input" placeholder="Masukkan URL API">
+      <button id="fetchDataBtn">Tarik Data</button>
+      <div id="loader" style="display:none;">Loading...</div>
+      <hr>
+      
+      <!-- Image Panel -->
+      <label>Gambar &amp; Thumbnail:</label>
+      <div id="imagePanel"></div>
+      
+      <br>
+      <!-- Image Upload -->
+      <input type="file" id="imageUpload" accept="image/*" multiple>
+      <br><br>
+      
+      <!-- Title and Description Inputs -->
+      <label for="textTitle">Judul:</label>
+      <select id="textTitle" class="text-input">
+        <option value="">Pilih Judul</option>
+      </select>
+      <button id="addTextBtn">Masukkan Judul</button>
+      <br>
+      <label for="textDescription">Deskripsi:</label>
+      <textarea id="textDescription" class="text-input" rows="4" placeholder="Masukkan deskripsi di sini"></textarea>
+      <button id="addTextareaBtn">Masukkan Deskripsi</button>
+      <br>
+    </div>
+    
+    <!-- Canvas Panel -->
+    <div class="canvas-container" id="canvasContainer">
+      <div id="canvas"></div>
+      <div class="edit-panel" id="textEditPanel" style="display: none;">
+        <select id="fontFamily">
+          <option value="Arial">Arial</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Helvetica">Helvetica</option>
+          <option value="Georgia">Georgia</option>
+        </select>
+        <input type="color" id="textColor" value="#000000">
+        <input type="color" id="textBgColor" value="#ffffff">
+        <label for="bgOpacity">Background Opacity:</label>
+        <input type="range" id="bgOpacity" min="0" max="100" value="50">
+        <select id="fontSize">
+          <option value="12">12px</option>
+          <option value="16">16px</option>
+          <option value="20">20px</option>
+          <option value="24">24px</option>
+          <option value="32">32px</option>
+        </select>
+        <button id="boldText">B</button>
+      </div>
+    </div>
+    
+    <div class="download-container">
+      <button onclick="exportAsPNG()">Download</button>
+    </div>
+  </div>
+
+  <!-- Include JavaScript files -->
+  <script src="js/element-2.js"></script>
+  <script src="js/image.js"></script>
+  <script src="js/textEditor.js"></script>
+  <script src="js/canvas.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
