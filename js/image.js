@@ -17,15 +17,18 @@ function toDataURLProxy(url) {
   
   // Fetch data from the API and update the UI
   document.getElementById('fetchDataBtn').addEventListener('click', function() {
-    const apiUrl = document.getElementById('apiUrl').value.trim();
+    const userUrl = document.getElementById('apiUrl').value.trim();
     const loader = document.getElementById('loader');
-    if (!apiUrl) {
-      alert('Silakan masukkan URL API terlebih dahulu.');
+    if (!userUrl) {
+      alert('Silakan masukkan URL website terlebih dahulu.');
       return;
     }
     loader.style.display = 'block';
     
-    fetch(apiUrl)
+    // Use our backend API to scrape the website entered by the user
+    const backendApiUrl = `http://localhost:3000/scrape?url=${encodeURIComponent(userUrl)}`;
+    
+    fetch(backendApiUrl)
       .then(response => response.json())
       .then(data => {
         const textTitle = document.getElementById('textTitle');
