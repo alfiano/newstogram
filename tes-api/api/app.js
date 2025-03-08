@@ -49,6 +49,7 @@ app.get('/stream-image', async (req, res) => {
     res.status(500).send('Gagal mengunduh gambar');
   }
 });
+
 app.get('/scrape', async (req, res) => {
   const url = req.query.url;
   if (!url) {
@@ -56,11 +57,27 @@ app.get('/scrape', async (req, res) => {
   }
 
   try {
-    const response = await fetch(url);
-    if (!response.ok) {
+    // Use API Ninjas webscraper API instead of direct fetching
+    const apiNinjasUrl = `https://api.api-ninjas.com/v1/webscraper?url=${encodeURIComponent(url)}`;
+    
+    // You need to replace 'YOUR_API_NINJAS_KEY' with your actual API Ninjas API key
+    // This can be stored in an environment variable for security
+    const apiNinjasKey = process.env.API_NINJAS_KEY || 'YOUR_API_NINJAS_KEY';
+    
+    const response = await axios({
+      method: 'GET',
+      url: apiNinjasUrl,
+      headers: {
+        'X-Api-Key': apiNinjasKey
+      }
+    });
+
+    if (response.status !== 200) {
       return res.status(400).json({ error: "Gagal mengambil konten dari URL tersebut." });
     }
-    const html = await response.text();
+
+    // Parse the HTML content from API Ninjas response
+    const html = response.data;
     const dom = new JSDOM(html);
     const document = dom.window.document;
 
@@ -74,31 +91,30 @@ app.get('/scrape', async (req, res) => {
       paragraphs.forEach(p => {
         originalContent += p.textContent.trim() + "\n";
       });
-    }
-
-    // Ambil URL gambar dari artikel tanpa melakukan konversi base64
-    let images = [];
-    if (article) {
-      const imgElements = article.querySelectorAll('img');
-      imgElements.forEach(img => {
-        const src = img.getAttribute('data-src') || img.getAttribute('src');
-        if (src && !images.includes(src)) {
-          images.push(src);
-        }
+    } else {
+      // If no article tag is found, try to get content from paragraphs in the body
+      const paragraphs = document.querySelectorAll('p');
+      paragraphs.forEach(p => {
+        originalContent += p.textContent.trim() + "\n";
       });
     }
 
-    // Ambil URL gambar thumbnail yang berada di luar <article>
-    let thumbnail = "";
-    const thumbAnchor = document.querySelector('a.mg-blog-thumb');
-    if (thumbAnchor) {
-      const img = thumbAnchor.querySelector('img');
-      if (img) {
-        const src = img.getAttribute('data-src') || img.getAttribute('src');
-        if (src) {
-          thumbnail = src;
-        }
+    // Extract images from the page
+    let images = [];
+    const imgElements = document.querySelectorAll('img');
+    imgElements.forEach(img => {
+      const src = img.getAttribute('data-src') || img.getAttribute('src');
+      if (src && !images.includes(src) && !src.startsWith('data:')) {
+        // Convert relative URLs to absolute URLs
+        const absoluteSrc = new URL(src, url).href;
+        images.push(absoluteSrc);
       }
+    });
+
+    // Try to find a thumbnail image
+    let thumbnail = "";
+    if (images.length > 0) {
+      thumbnail = images[0]; // Use the first image as thumbnail
     }
 
     // --- MODIFIKASI UNTUK 3 KANDIDAT JUDUL ---
