@@ -3,6 +3,7 @@ import cors from 'cors';
 import { JSDOM } from 'jsdom';
 import OpenAI from 'openai/index.mjs';
 import axios from 'axios';
+import probe from 'probe-image-size'; // Add this new import
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -68,7 +69,7 @@ app.get('/scrape', async (req, res) => {
       method: 'GET',
       url: apiNinjasUrl,
       headers: {
-        'X-Api-Key': apiNinjasKey
+        'X-Api-Key': apiNinjasKey,
       }
     });
 
@@ -77,17 +78,18 @@ app.get('/scrape', async (req, res) => {
     }
 
     // Parse the HTML content from API Ninjas response
-    const html = response.data;
+    const html = response.data.data; // Access the HTML content in the "data" field
     const dom = new JSDOM(html);
+
     const document = dom.window.document;
 
     const h1 = document.querySelector('h1');
     const originalTitle = h1 ? h1.textContent.trim() : "";
 
     let originalContent = "";
-    const article = document.querySelector('article');
-    if (article) {
-      const paragraphs = article.querySelectorAll('p');
+    const articleElement = document.querySelector('article');
+    if (articleElement) {
+      const paragraphs = articleElement.querySelectorAll('p');
       paragraphs.forEach(p => {
         originalContent += p.textContent.trim() + "\n";
       });
@@ -98,23 +100,99 @@ app.get('/scrape', async (req, res) => {
         originalContent += p.textContent.trim() + "\n";
       });
     }
+      // Extract images from the page - modified to only get images from article or main content
+      let imageSources = [];
 
-    // Extract images from the page
+      if (articleElement) {
+        // If article tag exists, get images only from within the article
+        const imgElements = articleElement.querySelectorAll('img');
+        imgElements.forEach(img => {
+          const src = img.getAttribute('data-src') || img.getAttribute('src');
+          if (src && !imageSources.includes(src) && !src.startsWith('data:')) {
+            // Convert relative URLs to absolute URLs
+            const absoluteSrc = new URL(src, url).href;
+            imageSources.push(absoluteSrc);
+          }
+        });
+      } else {
+        // If no article tag, try to find main content containers
+        const mainContent = document.querySelector('main') || 
+                            document.querySelector('.content') || 
+                            document.querySelector('.post-content') ||
+                            document.querySelector('.entry-content');
+      
+        if (mainContent) {
+          const imgElements = mainContent.querySelectorAll('img');
+          imgElements.forEach(img => {
+            const src = img.getAttribute('data-src') || img.getAttribute('src');
+            if (src && !imageSources.includes(src) && !src.startsWith('data:')) {
+              const absoluteSrc = new URL(src, url).href;
+              imageSources.push(absoluteSrc);
+            }
+          });
+        } else {
+          // Fallback: look for images near paragraphs in the body
+          const paragraphs = document.querySelectorAll('p');
+          paragraphs.forEach(p => {
+            // Get images that are siblings or children of paragraphs
+            const nearbyImgs = [...p.querySelectorAll('img'), 
+                                ...(p.parentNode ? p.parentNode.querySelectorAll('img') : [])];
+          
+            nearbyImgs.forEach(img => {
+              const src = img.getAttribute('data-src') || img.getAttribute('src');
+              if (src && !imageSources.includes(src) && !src.startsWith('data:')) {
+                const absoluteSrc = new URL(src, url).href;
+                imageSources.push(absoluteSrc);
+              }
+            });
+          });
+        }
+      }
+
+      // If no images found in content, try to find a featured image or thumbnail
+      if (imageSources.length === 0) {
+        // Look for common thumbnail or featured image selectors
+        const featuredImg = document.querySelector('.featured-image img') || 
+                            document.querySelector('.thumbnail img') ||
+                            document.querySelector('meta[property="og:image"]');
+      
+        if (featuredImg) {
+          const src = featuredImg.getAttribute('content') || 
+                      featuredImg.getAttribute('data-src') || 
+                      featuredImg.getAttribute('src');
+        
+          if (src && !src.startsWith('data:')) {
+            const absoluteSrc = new URL(src, url).href;
+            imageSources.push(absoluteSrc);
+          }
+        }
+      }
+    // Filter images by size (at least 400px in width or height)
     let images = [];
-    const imgElements = document.querySelectorAll('img');
-    imgElements.forEach(img => {
-      const src = img.getAttribute('data-src') || img.getAttribute('src');
-      if (src && !images.includes(src) && !src.startsWith('data:')) {
-        // Convert relative URLs to absolute URLs
-        const absoluteSrc = new URL(src, url).href;
-        images.push(absoluteSrc);
+    let thumbnail = "";
+    
+    // Check each image's dimensions
+    const imagePromises = imageSources.map(async (src) => {
+      try {
+        const result = await probe(src);
+        if (result.width >= 400 || result.height >= 400) {
+          images.push(src);
+          // Set the first large image as thumbnail if not set yet
+          if (!thumbnail) {
+            thumbnail = src;
+          }
+        }
+      } catch (error) {
+        console.log(`Failed to get dimensions for image: ${src}`);
       }
     });
+    
+    await Promise.all(imagePromises);
 
-    // Try to find a thumbnail image
-    let thumbnail = "";
-    if (images.length > 0) {
-      thumbnail = images[0]; // Use the first image as thumbnail
+    // If no large images found, use the first image as thumbnail
+    if (images.length === 0 && imageSources.length > 0) {
+      thumbnail = imageSources[0];
+      images.push(thumbnail);
     }
 
     // --- MODIFIKASI UNTUK 3 KANDIDAT JUDUL ---
