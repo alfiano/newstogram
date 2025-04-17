@@ -1,9 +1,47 @@
-/* Container utama dengan layout flex: kontrol di kiri dan kanvas di kanan */
+:root {
+  --primary-color: #4a90e2; /* A modern blue */
+  --secondary-color: #f4f7f6; /* Light gray background */
+  --text-color: #333;
+  --border-color: #e0e0e0;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --font-family: 'Inter', sans-serif;
+}
+
+body {
+  font-family: var(--font-family);
+  color: var(--text-color);
+  margin: 0;
+  background-color: var(--secondary-color);
+  line-height: 1.6;
+}
+
+/* Container utama */
 .container {
-  display: flex;
-  flex-direction: row;
-  min-height: 100vh;
+  display: flex; /* Keep flex */
+  flex-direction: column; /* Keep column */
+  height: 100vh; /* Use viewport height */
+  max-height: 1200px; /* Apply max height */
   box-sizing: border-box;
+  overflow: hidden; /* Prevent body scroll */
+}
+
+/* Main Content Area (Editor Row + Thumbnails) */
+.main-content-area {
+  display: flex;
+  flex-direction: column; /* Stack editor row and thumbnails vertically */
+  flex-grow: 1; /* Take up available vertical space */
+  overflow-y: auto; /* Allow this area to scroll vertically if needed */
+  overflow-x: hidden; /* Prevent horizontal scroll */
+  position: relative;
+}
+
+/* Editor Row (Controls + Canvases) */
+.editor-row {
+  display: flex;
+  flex-direction: row; /* Controls and Canvases side-by-side */
+  flex-grow: 1; /* Take available vertical space within main-content-area */
+  min-height: 0; /* Prevent flex items from overflowing */
+  overflow: hidden; /* Hide overflow */
 }
 
 /* Media query for mobile devices */
@@ -71,52 +109,232 @@
 
 /* Panel kontrol di sebelah kiri */
 .controls {
-  width: 250px;
-  padding: 20px;
+  width: 280px; /* Slightly wider */
+  padding: 20px; /* Slightly reduce padding */
   box-sizing: border-box;
-  border-right: 1px solid #ccc;
+  border-right: 1px solid var(--border-color);
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Reduce spacing between control groups */
+  flex-shrink: 0; /* Prevent controls from shrinking */
+  overflow-y: auto; /* Allow controls to scroll if content overflows */
+  height: 100%; /* Make controls take full height of editor-row */
+  /* align-items: center; */ /* Removed - No longer centering all items */
 }
 
-/* Panel gambar: area untuk menampilkan gambar-gambar dari API */
+.controls h1 {
+  font-size: 1.5em;
+  margin-bottom: 5px;
+  color: var(--primary-color);
+}
+
+.controls p {
+  font-size: 0.9em;
+  color: #666;
+  margin-top: 0;
+  margin-bottom: 10px; /* Reduce bottom margin */
+}
+
+.controls label {
+  font-weight: 500;
+  margin-bottom: 3px; /* Reduce space below labels */
+  display: block; /* Ensure labels are on their own line */
+}
+
+.controls hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 15px 0; /* Reduce vertical margin for hr */
+}
+
+/* Panel gambar */
 #imagePanel {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 8px; /* Reduce gap */
+  margin-top: 5px; /* Reduce top margin */
 }
 
 #imagePanel img {
   width: 100%;
-  max-width: 100px;
+  max-width: 80px; /* Slightly smaller thumbnails */
   cursor: pointer;
   border: 2px solid transparent;
-  transition: border-color 0.3s;
+  border-radius: 4px; /* Rounded corners */
+  transition: border-color 0.2s ease-in-out, transform 0.2s ease-in-out;
 }
 
 #imagePanel img:hover {
-  border-color: blue;
+  border-color: var(--primary-color);
+  transform: scale(1.05); /* Slight zoom on hover */
 }
 
 /* Panel kanvas di sebelah kanan */
 .canvas-container {
   flex: 1;
-  padding: 20px;
+  padding: 0 30px; /* More padding */
   box-sizing: border-box;
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
+  background-color: var(--secondary-color); /* Match body background */
 }
 
-/* Kanvas utama: ukuran tetap, overflow hidden untuk menyembunyikan elemen yang melebihi batas */
+/* Kanvas utama */
 #canvas {
   width: 400px;
   height: 500px;
-  border: 1px solid #ccc;
+  border: none; /* Remove border */
   position: relative;
   overflow: hidden;
+  background-color: #fff; /* White background for canvas */
+  box-shadow: 0 4px 15px var(--shadow-color); /* Add shadow */
+  border-radius: 8px; /* Rounded corners */
 }
 
-/* Wrapper tiap elemen (gambar atau teks) */
+/* Container for URL input and canvases scroll area */
+#allCanvasesContainer {
+  display: flex;
+  flex-direction: column; /* Stack URL input and canvases vertically */
+  justify-content: flex-start; /* Align items to the top */
+  align-items: center; /* Center horizontally */
+  flex-grow: 1;
+  padding: 20px; /* Revert to simpler padding */
+  overflow-y: auto; /* Allow vertical scrolling if needed */
+  background-color: var(--secondary-color);
+  min-width: 0;
+  /* height: 100%; */ /* Keep height removed */
+  box-sizing: border-box;
+}
+
+/* URL input group styles (now in main area) */
+.url-input-group {
+  display: flex;
+  flex-direction: row;
+  align-items: center; /* Center label, input, button */
+  width: 80%; /* Adjust width */
+  max-width: 500px; /* Max width for larger screens */
+  padding: 10px 0; /* Further reduced vertical padding */
+  margin-top: 0; /* Rely on container padding */
+  margin-bottom: 0px; /* Restore slightly more space below */
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
+.url-input-group input[type="text"] {
+  flex: 1; /* Allow input to take available space */
+  margin-right: 10px; /* Space between input and button */
+  min-width: 200px; /* Set a minimum width for the input */
+}
+
+.url-input-group #fetchDataBtn {
+  flex-shrink: 0; /* Prevent button from shrinking */
+  width: 100px; /* Set a fixed width for the button */
+}
+
+/* Wrapper for horizontally scrolling canvases */
+.canvases-scroll-area {
+  display: flex;
+  flex-direction: row; /* Arrange canvases horizontally */
+  gap: 30px; /* Space between canvas instances */
+  width: 100%; /* Take full width */
+  overflow-x: auto; /* Allow HORIZONTAL scrolling */
+  overflow-y: hidden; /* Hide vertical scrollbar */
+  align-items: flex-start; /* Align instances to the top */
+  padding: 10px 0; /* Reduced padding */
+  /* min-height: 450px; */ /* Keep min-height removed */
+  flex-grow: 1; /* Restore flex-grow */
+}
+
+/* Adjust padding inside the canvas container */
+#allCanvasesContainer > .canvas-instance:first-child {
+  /* Maybe add padding-top if needed */
+}
+
+/* Individual canvas instance wrapper */
+.canvas-instance {
+  display: flex; /* Use flex to arrange canvas and button vertically */
+  flex-direction: column;
+  align-items: center; /* Center canvas and button horizontally */
+  gap: 15px; /* Space between canvas and download button */
+  /* border: 3px solid transparent; */ /* Removing border for active state for now */
+  /* padding: 5px; */
+  /* border-radius: 12px; */
+  transition: transform 0.2s ease; /* Add slight scale effect on hover maybe */
+  flex-shrink: 0; /* Prevent instances from shrinking */
+}
+
+/* Styling for the Add Canvas button container (now outside canvas container) */
+.add-canvas-container {
+  display: flex;
+  flex-direction: column; /* Stack vertically */
+  align-items: center; /* Center horizontally */
+  justify-content: center; /* Center vertically */
+  padding: 30px 20px; /* Match container padding */
+  box-sizing: border-box;
+  flex-shrink: 0; /* Don't shrink */
+  width: 150px; /* Fixed width for the button column */
+  border-left: 1px solid var(--border-color); /* Separator */
+  border-right: 1px solid var(--border-color); /* Separator */
+  background-color: #fff; /* White background */
+}
+
+#addCanvasBtn {
+  /* Reset styles from previous attempt */
+  margin: 0;
+  width: 100%; /* Full width of its container */
+  height: auto;
+  padding: 15px 10px; /* Adjust padding */
+  font-size: 1em; /* Adjust font size */
+  background-color: #6c757d; /* Keep grey background */
+  /* Add text wrapping if needed */
+  white-space: normal;
+  line-height: 1.3;
+}
+#addCanvasBtn:hover {
+  background-color: #5a6268;
+}
+
+
+/* Add a subtle hover effect */
+.canvas-instance:not(.active-canvas-instance):hover {
+   transform: scale(1.02);
+}
+
+
+.canvas-instance.active-canvas-instance .canvas {
+  /* Maybe add a more prominent shadow or outline to the canvas itself when active */
+   box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4); /* Blue shadow for active */
+}
+
+/* Styles for the actual canvas div inside the instance */
+.canvas {
+  width: 800px; /* Keep fixed size */
+  height: 1000px;
+  border: none;
+  position: relative;
+  overflow: hidden;
+  background-color: #fff;
+  box-shadow: 0 4px 15px var(--shadow-color);
+  cursor: pointer; /* Indicate canvas area is clickable for activation */
+  transition: box-shadow 0.3s ease; /* Smooth shadow transition */
+}
+
+/* Download button styling */
+.instance-actions {
+  width: 100%; /* Take full width of the instance area */
+  text-align: center; /* Center the button */
+}
+
+.instance-actions .downloadBtn {
+  /* Use standard button styles or customize */
+  padding: 8px 20px;
+  font-size: 0.9em;
+}
+
+
+/* Wrapper tiap elemen */
 .element {
   position: absolute;
   user-select: none;
@@ -136,137 +354,375 @@
 .rotate-handle,
 .delete-btn {
   position: absolute;
-  width: 30px;
-  height: 30px;
-  background: rgba(0, 0, 255, 0.6);
+  width: 24px; /* Smaller handles */
+  height: 24px;
+  background: var(--primary-color);
+  border: 1px solid white; /* White border for contrast */
   border-radius: 50%;
   z-index: 1000;
   touch-action: none;
+  display: flex; /* Use flex for centering icon/text */
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 .resize-handle {
   cursor: se-resize;
-  right: -15px;
-  bottom: -15px;
+  right: -12px; /* Adjust position */
+  bottom: -12px;
 }
+/* Add simple icon for resize */
+.resize-handle::before {
+  content: '↔'; /* Simple resize symbol */
+  font-size: 12px;
+  transform: rotate(45deg);
+}
+
 
 .rotate-handle {
   cursor: pointer;
   left: 50%;
-  bottom: -15px;
-  transform: translateX(-30px); /* Offset by its own width + spacing */
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
+  bottom: -12px;
+  transform: translateX(-50%); /* Center horizontally */
+  font-size: 14px; /* Adjust icon size */
 }
+/* Add rotate icon */
+.rotate-handle::before {
+  content: '↻'; /* Rotate symbol */
+}
+
 
 .delete-btn {
   cursor: pointer;
-  left: -15px;
-  top: -15px;
-  background: rgba(255, 0, 0, 0.6);
-  color: white;
-  border: none;
-  font-size: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  left: -12px;
+  top: -12px;
+  background: #e74c3c; /* Red for delete */
+  font-size: 14px; /* Adjust icon size */
+}
+/* Add delete icon */
+.delete-btn::before {
+  content: '×'; /* Close symbol */
+  font-weight: bold;
 }
 
+
 .element.active {
-  outline: 2px solid blue;
+  outline: 2px solid var(--primary-color); /* Use primary color for outline */
 }
 
 .element.active .resize-handle,
 .element.active .rotate-handle,
 .element.active .delete-btn {
-  display: flex;
+  display: flex; /* Keep display: flex for handles */
 }
-.element button.move-btn {
+
+/* Adjust handle visibility based on parent instance being active *and* element being active */
+.canvas-instance.active-canvas-instance .element.active .resize-handle,
+.canvas-instance.active-canvas-instance .element.active .rotate-handle,
+.canvas-instance.active-canvas-instance .element.active .delete-btn,
+.canvas-instance.active-canvas-instance .element.active .move-button { /* Added move-button */
+  display: flex; /* Show handles only on active element within active canvas */
+}
+
+
+/* Move button style (ensure it exists) */
+.move-button {
   position: absolute;
-  left: 50%;
-  bottom: -15px;
-  transform: translateX(5px); /* Add spacing from rotate button */
+  width: 24px;
+  height: 24px;
+  background: var(--primary-color);
+  border: 1px solid white;
+  border-radius: 50%;
   z-index: 1000;
+  touch-action: none;
+  display: none; /* Hidden by default */
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  cursor: move;
+  font-size: 14px;
 }
+.move-button::before {
+    content: '✥'; /* Move symbol */
+}
+
+
+/* Hide original move button if it still exists with old class */
+.element button.move-btn {
+  display: none; /* Ensure old button is hidden */
+  /* position: absolute; */ /* Remove positioning if hiding */
+  /* left: 50%; */
+  /* bottom: -15px; */
+  /* transform: translateX(5px); */ /* Add spacing from rotate button */
+  /* z-index: 1000; */
+}
+
+/* Action buttons container */
+.action-buttons {
+  padding: 15px 25px; /* Match controls padding */
+  text-align: center;
+  background-color: #fff;
+  border-top: 1px solid var(--border-color);
+  position: sticky;
+  bottom: 0;
+  z-index: 900;
+  /* This class is now only on the Add Canvas container */
+  position: static; /* Reset sticky positioning */
+  padding: 0; /* Reset padding */
+  border: none; /* Reset border */
+  background-color: transparent; /* Reset background */
+  /* display: flex; */ /* Reset display */
+  /* gap: 10px; */
+  /* justify-content: center; */
+  /* background-color: var(--secondary-color); */
+  /* border-top: none; */
+  /* padding: 10px 25px; */
+}
+/* #addCanvasBtn { */
+  /* background-color: #6c757d; */ /* Style moved to .add-canvas-container #addCanvasBtn */
+/* } */
+/* #addCanvasBtn:hover { */
+  /* background-color: #5a6268; */
+/* } */
+
+
 /* Styling tambahan untuk input teks dan textarea */
-.text-input {
+/* Modern Form Styles */
+input[type="text"],
+input[type="file"],
+textarea,
+select {
   width: 100%;
-  margin-bottom: 10px;
+  padding: 10px 12px; /* More padding */
+  margin-bottom: 8px; /* Reduce space below inputs */
   box-sizing: border-box;
-  padding: 5px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-family: var(--font-family);
+  font-size: 0.95em;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+input[type="text"]:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2); /* Subtle focus ring */
 }
 
 textarea.text-input {
   resize: vertical;
+  min-height: 80px; /* Minimum height for textarea */
 }
 
-.download-container{
-  margin: auto;
+/* Modern Button Styles */
+button {
+  padding: 10px 15px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--font-family);
+  font-size: 0.95em;
+  font-weight: 500;
+  transition: background-color 0.2s ease-in-out, transform 0.1s ease;
+  display: inline-block; /* Ensure buttons behave predictably */
+  margin-right: 5px; /* Spacing between buttons if inline */
+  margin-bottom: 5px; /* Add bottom margin for spacing */
+}
+
+button:hover {
+  background-color: #3a7bc8; /* Darker shade on hover */
+}
+
+button:active {
+  transform: scale(0.98); /* Slight press effect */
+}
+
+/* Specific button adjustments */
+#fetchDataBtn, #addTextBtn, #addTextareaBtn {
+  width: 100%; /* Make main action buttons full width */
+  margin-top: 3px; /* Reduce top margin */
+}
+
+input[type="file"] {
+  border: 1px dashed var(--border-color); /* Dashed border for file input */
+  background-color: var(--secondary-color);
+  padding: 15px;
   text-align: center;
 }
+input[type="file"]::file-selector-button { /* Style the internal button */
+  padding: 8px 12px;
+  background-color: #e0e0e0;
+  color: var(--text-color);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 10px;
+  transition: background-color 0.2s ease;
+}
+input[type="file"]:hover::file-selector-button {
+  background-color: #d0d0d0;
+}
 
-.edit-panel {
-  position: fixed;
-  top: 10px;
+
+.download-container {
+  padding: 20px; /* Add padding around download button */
+  text-align: center;
+  background-color: #fff; /* Give it a background */
+  border-top: 1px solid var(--border-color); /* Separator line */
+  position: sticky; /* Keep it visible if controls scroll */
+  bottom: 0;
+  /* Removed - Now in .action-buttons */
+}
+
+
+/* Edit Panel Styles */
+.edit-panel { /* Now using class selector */
+  position: absolute; /* Position relative to canvas-container */
+  top: 0; /* Position above the canvas */
   left: 50%;
   transform: translateX(-50%);
   background: white;
-  padding: 10px;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  padding: 8px 12px; /* Adjust padding */
+  border-radius: 6px;
+  box-shadow: 0 3px 8px var(--shadow-color);
   z-index: 1000;
   display: flex;
-  gap: 10px;
+  gap: 8px; /* Adjust gap */
+  align-items: center; /* Align items vertically */
 }
 
-.edit-panel select, .edit-panel input, .edit-panel button {
-  padding: 5px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+/* Use class selectors for controls inside edit panel */
+.edit-panel .fontFamily,
+.edit-panel .fontSize,
+.edit-panel .textColor,
+.edit-panel .textBgColor,
+.edit-panel .bgOpacity,
+.edit-panel .boldText {
+  padding: 6px 8px; /* Consistent padding */
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 0.9em;
+  margin: 0; /* Reset margin */
 }
 
-.edit-panel button {
-  font-weight: bold;
+.edit-panel .textColor,
+.edit-panel .textBgColor { /* Style color inputs */
+  width: 30px;
+  height: 30px;
+  padding: 2px;
+  border: none;
   cursor: pointer;
 }
 
-.resize-handle, .rotate-handle, .element button {
-  width: 24px !important;
-  height: 24px !important;
-  touch-action: none;
+.edit-panel .bgOpacity { /* Style range input */
+  height: 5px;
+  cursor: pointer;
+  padding: 0; /* Remove padding for range */
 }
-.editable-text:focus {
-    outline: 2px dashed #3498db;
+
+.edit-panel .boldText { /* Style button */
+  font-weight: bold;
+  cursor: pointer;
+  background-color: #eee;
+  color: var(--text-color);
+  min-width: 30px;
 }
-.toggle-controls {
+.edit-panel .boldText:hover {
+  background-color: #ddd;
+}
+
+.edit-panel label { /* Style labels within panel */
+  font-size: 0.85em;
+  color: #555;
+  margin-right: 2px; /* Adjust spacing */
+  margin-left: 5px;
+}
+
+
+/* Hide original resize/rotate/move buttons inside element (redundant but safe) */
+.element button.move-btn,
+.element button.rotate-btn {
   display: none;
 }
-@media (max-width: 768px) {
-  .resize-handle, .rotate-handle, .element button {
-      width: 28px !important;
-      height: 28px !important;
-  }
+
+.editable-text:focus {
+    outline: 2px dashed var(--primary-color); /* Use primary color for focus */
 }
-/* Add these new styles at the media query section */
+
+.toggle-controls {
+  display: none; /* Keep hidden on desktop */
+  position: fixed;
+  left: 15px;
+  top: 15px;
+  z-index: 1001;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 50%; /* Make it circular */
+  cursor: pointer;
+  box-shadow: 0 2px 5px var(--shadow-color);
+  font-size: 1.2em;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Loader Style */
+#loader {
+  color: var(--primary-color);
+  font-weight: 500;
+  text-align: center;
+  padding: 10px;
+}
+
+
+/* Responsive Adjustments */
 @media screen and (max-width: 768px) {
+  /* Adjust container height for mobile */
   .container {
-    flex-direction: column;
+    height: auto; /* Allow height to adjust to content */
+    min-height: 100vh; /* Ensure it still takes at least full screen */
+    max-height: none; /* Remove max-height */
   }
-  
+
+  .main-content-area {
+    flex-direction: column; /* Stack editor row and thumbnails vertically on mobile */
+    overflow: hidden; /* Prevent this area itself from scrolling */
+    /* Remove height calculation from here */
+  }
+
+  .editor-row {
+    flex-direction: column; /* Stack controls and canvases vertically */
+    /* overflow: visible; */
+    overflow-y: auto; /* Allow this row to scroll */
+    height: calc(100vh - 80px); /* Apply height calculation here */
+    flex-grow: 1; /* Ensure it tries to take available space */
+  }
+
   .controls {
+    height: auto; /* Reset height */
+    /* Keep fixed positioning logic for mobile */
     position: fixed;
-    left: -250px; /* Hide by default */
+    left: -280px; /* Match new width */
     top: 0;
     height: 100vh;
-    width: 250px;
+    width: 280px; /* Match new width */
     background: white;
     transition: left 0.3s ease;
     z-index: 1000;
     overflow-y: auto;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    box-shadow: 2px 0 5px var(--shadow-color);
+    border-right: none; /* Remove border on mobile */
+    padding-top: 60px; /* Space for toggle button */
   }
 
   .controls.open {
@@ -275,35 +731,229 @@ textarea.text-input {
 
   /* Toggle button */
   .toggle-controls {
-    position: fixed;
-    left: 10px;
-    top: 10px;
-    z-index: 1001;
-    padding: 10px;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    cursor: pointer;
+    display: flex; /* Show on mobile */
   }
 
   .canvas-container {
     width: 100%;
-    padding: 10px;
-    margin-top: 50px; /* Space for toggle button */
-    align-items: flex-start;
+    padding: 15px; /* Adjust padding */
+    margin-top: 0; /* Remove margin, handled by controls padding */
+    align-items: flex-start; /* Align canvas to top */
+    min-height: calc(100vh - 70px); /* Adjust height considering potential edit panel */
   }
-  .toggle-controls {
-    display: block;
-    position: fixed;
+
+  /* Adjust canvas container on mobile - remove outer padding */
+   .canvas-container {
+    padding: 0; /* Remove padding, handled by instance */
+    width: 100%; /* Ensure it takes full width of instance */
+   }
+
+  /* Adjust canvas size on mobile */
+  .canvas {
+    width: 300px; /* Smaller fixed size for mobile */
+    height: 375px; /* Maintain aspect ratio */
+    /* max-width: 90vw; */ /* Alternative: use viewport width */
+    /* height: auto; */
+    /* aspect-ratio: 4 / 5; */
+    margin: 0 auto;
+  }
+
+   /* Adjust all canvases container on mobile */
+   #allCanvasesContainer {
+     padding: 15px;
+     justify-content: flex-start; /* Align items to top on mobile */
+     /* Keep align-items: center; */
+     overflow: hidden; /* Keep hidden */
+     min-height: auto; /* Reset min-height */
+     height: auto; /* Let content determine height */
+     flex-grow: 1; /* Allow it to take space */
+   }
+
+   /* Adjust URL input group on mobile */
+   .url-input-group {
+     width: 95%; /* Wider on mobile */
+     margin-bottom: 20px; /* Reduce margin */
+   }
+
+   /* Adjust canvases scroll area on mobile */
+   .canvases-scroll-area {
+     gap: 20px;
+     padding: 10px 0;
+     min-height: 400px; /* Adjust min height */
+   }
+
+    /* Adjust add canvas container on mobile - This class is no longer used */
+   /* .add-canvas-container { ... } */
+
+   /* Adjust Add Slide button within thumbnail container */
+   .thumbnail-container #addCanvasBtn {
+     padding: 10px 15px;
+     font-size: 0.95em;
+     width: auto; /* Auto width on mobile */
+   }
+
+
+   /* Adjust canvas instance on mobile */
+   .canvas-instance {
+     gap: 10px; /* Reduce gap */
+   }
+
+  .edit-panel {
+    position: fixed; /* Fixed position on mobile */
+    bottom: 10px; /* Position at the bottom */
+    top: auto;
     left: 10px;
-    top: 10px;
-    z-index: 1001;
-    padding: 10px;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    cursor: pointer;
+    right: 10px;
+    transform: none; /* Reset transform */
+    width: auto; /* Adjust width based on content */
+    max-width: calc(100% - 20px); /* Max width */
+    justify-content: center; /* Center items */
+    flex-wrap: wrap; /* Allow wrapping */
   }
+
+  #imagePanel img {
+    max-width: 60px; /* Smaller thumbnails on mobile */
+  }
+
+  /* Make handles slightly larger for touch */
+  .resize-handle,
+  .rotate-handle,
+  .delete-btn {
+    width: 28px;
+    height: 28px;
+  }
+  .resize-handle { right: -14px; bottom: -14px; }
+  .rotate-handle { bottom: -14px; }
+  .delete-btn { left: -14px; top: -14px; }
+  } /* Closing brace for @media screen and (max-width: 768px) */
+
+/* Thumbnail Navigation Styles */
+.thumbnail-container {
+  display: flex;
+  align-items: center; /* Vertically align items */
+  justify-content: center; /* Center thumbnails horizontally */
+  padding: 15px 0; /* Vertical padding only */
+  background-color: #fff; /* White background */
+  /* border-top: 1px solid var(--border-color); */ /* Removed border */
+  overflow-x: auto; /* Allow horizontal scrolling if needed */
+  gap: 15px; /* Space between thumbnails and button */
+  width: 100%; /* Span full width */
+  margin-top: 10px; /* Keep reduced space above the thumbnail bar */
+  /* z-index: 950; */ /* Likely not needed */
+  /* box-shadow: 0 -2px 5px var(--shadow-color); */ /* Removed shadow */
+  flex-shrink: 0; /* Prevent thumbnail bar from shrinking */
+  box-sizing: border-box; /* Include padding in width calculation */
 }
 
+.thumbnail {
+  flex-shrink: 0; /* Prevent thumbnails from shrinking */
+  width: 80px; /* Fixed width */
+  height: 60px; /* Fixed height */
+  background-color: var(--secondary-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8em;
+  color: #555;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
 
+.thumbnail:hover {
+  border-color: var(--primary-color);
+}
+
+.thumbnail.active-thumbnail {
+  border-color: var(--primary-color);
+  background-color: #e9f2fc; /* Light blue background for active */
+  font-weight: 500;
+  color: var(--primary-color);
+  border-width: 2px;
+}
+
+/* Add Slide Button Styles */
+.add-slide-btn {
+  flex-shrink: 0; /* Prevent shrinking */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 80px; /* Match thumbnail width */
+  height: 60px; /* Match thumbnail height */
+  background-color: transparent; /* Transparent background */
+  border: 1px dashed var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  color: #666;
+  transition: border-color 0.2s ease, color 0.2s ease;
+  padding: 5px; /* Add some padding */
+  box-sizing: border-box;
+}
+
+.add-slide-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background-color: transparent; /* Ensure background doesn't change on hover */
+}
+
+.add-slide-btn .plus-icon {
+  font-size: 1.8em; /* Larger plus icon */
+  line-height: 1; /* Adjust line height */
+}
+
+.add-slide-btn .add-slide-text {
+  font-size: 0.75em; /* Smaller text */
+  margin-top: 4px; /* Space between icon and text */
+  line-height: 1;
+}
+
+/* Override previous #addCanvasBtn styles */
+#addCanvasBtn {
+  /* Reset styles that might conflict */
+  margin: 0;
+  width: auto; /* Let the .add-slide-btn class control width */
+  height: auto; /* Let the .add-slide-btn class control height */
+  padding: 0; /* Let the .add-slide-btn class control padding */
+  font-size: inherit; /* Inherit from parent or .add-slide-btn */
+  background-color: transparent; /* Ensure transparent */
+  white-space: normal;
+  line-height: inherit;
+  border: none; /* Remove default button border */
+  color: inherit; /* Inherit color */
+}
+#addCanvasBtn:hover {
+  background-color: transparent; /* Ensure transparent on hover */
+}
+
+/* Adjustments for mobile thumbnail bar */
+@media screen and (max-width: 768px) {
+  .thumbnail-container {
+    padding: 10px 0; /* Vertical padding only */
+    gap: 10px; /* Reduce gap */
+    margin-top: 15px; /* Adjust margin */
+    /* justify-content: center; */ /* Already set above */
+    /* width: 100%; */ /* Already set above */
+    flex-shrink: 0; /* Ensure it doesn't shrink */
+  }
+
+  .thumbnail {
+    width: 70px;
+    height: 50px;
+    font-size: 0.75em;
+  }
+
+  .add-slide-btn {
+    width: 70px;
+    height: 50px;
+  }
+
+  .add-slide-btn .plus-icon {
+    font-size: 1.6em;
+  }
+
+  .add-slide-btn .add-slide-text {
+    font-size: 0.7em;
+  }
+}

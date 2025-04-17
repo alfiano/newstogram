@@ -24,9 +24,10 @@ function toDataURLProxy(url) {
       return;
     }
     loader.style.display = 'block';
+    const language = document.getElementById('languageSelect').value;
     
     // Use our backend API to scrape the website entered by the user
-    const backendApiUrl = `http://localhost:3000/scrape?url=${encodeURIComponent(userUrl)}`;
+    const backendApiUrl = `http://localhost:3000/scrape?url=${encodeURIComponent(userUrl)}&lang=${encodeURIComponent(language)}`;
     
     fetch(backendApiUrl)
       .then(response => response.json())
@@ -68,10 +69,15 @@ function toDataURLProxy(url) {
                 imgEl.src = dataUrl;
                 imgEl.alt = "Gambar " + (index + 1);
                 imgEl.addEventListener('click', function() {
+                  const activeCanvas = getActiveCanvas(); // Get active canvas
+                  if (!activeCanvas) {
+                      alert("Please select a canvas first.");
+                      return;
+                  }
                   const imgObj = new Image();
                   imgObj.src = dataUrl;
                   imgObj.onload = function() {
-                    createElement(imgObj);
+                    createElement(imgObj, activeCanvas); // Pass active canvas
                   }
                 });
                 imagePanel.appendChild(imgEl);
@@ -82,11 +88,13 @@ function toDataURLProxy(url) {
           if (allImages.length > 0) {
             toDataURLProxy(allImages[0])
               .then(dataUrl => {
+                const activeCanvas = getActiveCanvas(); // Get active canvas
+                if (!activeCanvas) return; // Don't auto-add if no canvas is active/exists
                 const imgObj = new Image();
                 imgObj.src = dataUrl;
                 imgObj.onload = function() {
-                imgObj.style.zIndex = 1;
-                createElement(imgObj);
+                  imgObj.style.zIndex = 1;
+                  createElement(imgObj, activeCanvas); // Pass active canvas
                 }
               })
               .catch(err => console.error('Error auto inserting image:', err));
@@ -95,23 +103,23 @@ function toDataURLProxy(url) {
         }
 
         if (data.judul && Array.isArray(data.judul) && data.judul.length > 0) {
-            const textContainer = document.createElement('div');
-            textContainer.classList.add('autoTextInserted');
-            const titleEl = document.createElement('h3');
-            titleEl.contentEditable = true;
-            titleEl.style.margin = "0";
-            titleEl.style.padding = "10px";
-            titleEl.style.position = "absolute";
-            titleEl.style.color = "#fff";
-            titleEl.style.fontFamily ="Arial";
-            titleEl.style.lineHeight = "22px";
-            titleEl.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-            titleEl.style.zIndex = 10;
-            titleEl.innerText = data.judul[0];
-            textContainer.appendChild(titleEl);
-            createElement(textContainer);
+            const activeCanvas = getActiveCanvas(); // Get active canvas
+            if (activeCanvas) { // Only add if a canvas is active
+                const titleEl = document.createElement('h3'); // Create the editable element directly
+                titleEl.contentEditable = true;
+                titleEl.className = 'editable-text autoTextInserted'; // Add classes
+                titleEl.style.margin = "0";
+                titleEl.style.padding = "10px";
+                // titleEl.style.position = "absolute"; // Handled by wrapper
+                titleEl.style.color = "#000";
+                titleEl.style.fontFamily ="Arial";
+                titleEl.style.lineHeight = "22px";
+                //titleEl.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                titleEl.style.zIndex = 10; // Maybe apply to wrapper instead
+                titleEl.innerText = data.judul[0];
+                createElement(titleEl, activeCanvas); // Pass element and active canvas
+            }
           }
-
       })
       .catch(error => {
         console.error('Error fetching data:', error);
@@ -128,13 +136,17 @@ function toDataURLProxy(url) {
     for (let file of files) {
       const reader = new FileReader();
       reader.onload = function(evt) {
+        const activeCanvas = getActiveCanvas(); // Get active canvas
+        if (!activeCanvas) {
+            alert("Please select a canvas first to upload the image.");
+            return;
+        }
         const img = new Image();
         img.src = evt.target.result;
         img.onload = function() {
-          createElement(img);
+          createElement(img, activeCanvas); // Pass active canvas
         }
       };
       reader.readAsDataURL(file);
     }
   });
-  
