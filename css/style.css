@@ -310,8 +310,8 @@ body {
 
 /* Styles for the actual canvas div inside the instance */
 .canvas {
-  width: 800px; /* Keep fixed size */
-  height: 1000px;
+  width: 500px; /* Keep fixed size */
+  height: 625px;
   border: none;
   position: relative;
   overflow: hidden;

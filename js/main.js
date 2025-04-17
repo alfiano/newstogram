@@ -296,6 +296,7 @@ function exportAsPNG(targetCanvasElement) { // Accept target canvas as argument
     html2canvas(targetCanvasElement, { // Use the passed canvas element
         logging: false, // Disable logging unless debugging
         useCORS: true,
+        scale: 2, // Upscale output 2x (from 500x625 to 1000x1250)
         backgroundColor: window.getComputedStyle(targetCanvasElement).backgroundColor || '#ffffff' // Use actual background or default white
     }).then(canvas => {
         const link = document.createElement('a');

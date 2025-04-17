@@ -2,7 +2,7 @@
 
 // Convert image URL to Data URL using a proxy
 function toDataURLProxy(url) {
-    return fetch(`http://localhost:3000/stream-image?url=${encodeURIComponent(url)}`)
+    return fetch(`https://tes-api7.agep.web.id/stream-image?url=${encodeURIComponent(url)}`)
       .then(response => {
         if (!response.ok) throw new Error('Error fetching image from proxy.');
         return response.blob();
@@ -27,7 +27,7 @@ function toDataURLProxy(url) {
     const language = document.getElementById('languageSelect').value;
     
     // Use our backend API to scrape the website entered by the user
-    const backendApiUrl = `http://localhost:3000/scrape?url=${encodeURIComponent(userUrl)}&lang=${encodeURIComponent(language)}`;
+    const backendApiUrl = `https://tes-api7.agep.web.id/scrape?url=${encodeURIComponent(userUrl)}&lang=${encodeURIComponent(language)}`;
     
     fetch(backendApiUrl)
       .then(response => response.json())
