@@ -1,0 +1,13 @@
+/* css/templates/template1.css */
+.canvas.template1 {
+    background-color: #f0f0f0;
+    font-family: 'Arial', sans-serif;
+}
+
+.canvas.template1 .element {
+    border: 1px dashed blue; /* Example style for elements in template 1 */
+}
+
+.canvas.template1 .editable-text {
+    color: #333;
+}

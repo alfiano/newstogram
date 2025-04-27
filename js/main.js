@@ -69,6 +69,14 @@ function setupTextEditControls(textEditPanel) {
     }
     if (textColorInput) {
         textColorInput.addEventListener('input', (e) => applyTextColor(e.target.value));
+        // Add listener to update label border color on change
+        textColorInput.addEventListener('change', (e) => {
+            const colorInput = e.target;
+            const colorGroup = colorInput.closest('.color-picker-group');
+            if (colorGroup) {
+                const label = colorGroup.querySelector('.color-picker-label');
+            }
+        });
     }
     if (fontSizeSelect) {
         fontSizeSelect.addEventListener('change', (e) => applyFontSize(e.target.value));
@@ -80,6 +88,14 @@ function setupTextEditControls(textEditPanel) {
     // --- Text Highlight Background (Solid Color) ---
     if (textHighlightColorInput) {
         textHighlightColorInput.addEventListener('input', (e) => applyHighlightBgColor(e.target.value));
+        // Add listener to update label border color on change
+        textHighlightColorInput.addEventListener('change', (e) => {
+            const colorInput = e.target;
+            const colorGroup = colorInput.closest('.color-picker-group');
+            if (colorGroup) {
+                const label = colorGroup.querySelector('.color-picker-label');
+            }
+        });
     }
 
     // --- Element Wrapper Background Color & Opacity ---
@@ -112,6 +128,7 @@ function addCanvas() {
     const canvasInstanceDiv = document.createElement('div');
     canvasInstanceDiv.className = 'canvas-instance';
     canvasInstanceDiv.id = `canvasInstance-${canvasCounter}`; // Optional ID for the instance
+    canvasInstanceDiv.style.touchAction = 'none'; // Prevent default touch actions
 
     // 2. Create the canvas container
     const canvasContainer = document.createElement('div');
@@ -161,7 +178,7 @@ function addCanvas() {
     instanceActionsDiv.className = 'instance-actions';
     const downloadBtn = document.createElement('button');
     downloadBtn.className = 'downloadBtn';
-    downloadBtn.textContent = `Download Canvas ${canvasCounter}`;
+    downloadBtn.textContent = `Download`;
     downloadBtn.addEventListener('click', () => exportAsPNG(canvasDiv)); // Pass the specific canvasDiv
     instanceActionsDiv.appendChild(downloadBtn);
     canvasInstanceDiv.appendChild(instanceActionsDiv); // Add actions below the container
@@ -254,7 +271,186 @@ document.addEventListener('DOMContentLoaded', function() {
     // Global drag/resize listeners (from original main.js) - These should work fine globally
     // They rely on functions in element.js which are now canvas-aware or use closest()
     // No changes needed here assuming element.js handles the logic correctly.
+  // Modal Pop-up Logic
+  const openModalBtn = document.getElementById('openModalBtn');
+  const modalOverlay = document.getElementById('modalOverlay');
+  const closeModalBtn = document.getElementById('closeModalBtn');
+  const modalFetchDataBtn = document.getElementById('modalFetchDataBtn');
+  const modalApiUrl = document.getElementById('modalApiUrl');
+  const modalLanguageSelect = document.getElementById('modalLanguageSelect');
+  const modalLoader = document.getElementById('modalLoader');
+
+  if (openModalBtn && modalOverlay) {
+    openModalBtn.addEventListener('click', () => {
+      modalOverlay.style.display = 'flex';
+      modalApiUrl.value = '';
+      modalLoader.style.display = 'none';
+      modalApiUrl.focus();
+    });
+  }
+  if (closeModalBtn && modalOverlay) {
+    closeModalBtn.addEventListener('click', () => {
+      modalOverlay.style.display = 'none';
+    });
+  }
+  // Close modal on overlay click (not modal-box)
+  if (modalOverlay) {
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) {
+        modalOverlay.style.display = 'none';
+      }
+    });
+  }
+  // Enter key submits in input
+  if (modalApiUrl && modalFetchDataBtn) {
+    modalApiUrl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        modalFetchDataBtn.click();
+      }
+    });
+  }
+  // Modal "Tarik Data" button logic
+  if (modalFetchDataBtn && modalApiUrl && modalLanguageSelect && modalLoader) {
+    modalFetchDataBtn.addEventListener('click', () => {
+      const url = modalApiUrl.value.trim();
+      const lang = modalLanguageSelect.value;
+      if (!url) {
+        modalApiUrl.focus();
+        modalApiUrl.style.borderColor = '#e74c3c';
+        setTimeout(() => { modalApiUrl.style.borderColor = ''; }, 1200);
+        return;
+      }
+      modalLoader.style.display = 'block';
+      // Simulasikan klik fetchDataBtn lama jika masih ada logic di file lain
+      const oldFetchBtn = document.getElementById('fetchDataBtn');
+      const oldApiUrl = document.getElementById('apiUrl');
+      const oldLang = document.getElementById('languageSelect');
+      if (oldApiUrl) oldApiUrl.value = url;
+      if (oldLang) oldLang.value = lang;
+      if (oldFetchBtn) {
+        oldFetchBtn.click();
+        setTimeout(() => {
+          modalOverlay.style.display = 'none';
+          modalLoader.style.display = 'none';
+        }, 500);
+      } else {
+        // Jika fetchDataBtn sudah dihapus, trigger custom event atau lakukan fetch di sini
+        // Implementasikan fetch langsung ke /scrape
+        fetch(`/scrape?url=${encodeURIComponent(url)}&lang=${encodeURIComponent(lang)}`)
+          .then(response => response.json())
+          .then(data => {
+            // Set judul options
+            const titleSelect = document.getElementById('textTitle');
+            if (titleSelect && data.judul && Array.isArray(data.judul)) {
+              // Remove old options except the first
+              while (titleSelect.options.length > 1) {
+                titleSelect.remove(1);
+              }
+              data.judul.forEach(judul => {
+                const opt = document.createElement('option');
+                opt.value = judul;
+                opt.textContent = judul;
+                titleSelect.appendChild(opt);
+              });
+            }
+            // Set summary
+            const summaryTextarea = document.getElementById('textSummary');
+            if (summaryTextarea && data.summary) {
+              summaryTextarea.value = data.summary;
+            }
+            // Optionally set description or other fields if needed
+
+            // Add the gradient layer image
+            const activeCanvas = getActiveCanvas();
+            if (activeCanvas) {
+              const gradientImg = new Image();
+              gradientImg.src = 'assets/gradient_layer.png';
+              gradientImg.onload = () => {
+                createElement(gradientImg, activeCanvas);
+              };
+              gradientImg.onerror = (err) => {
+                console.error("Failed to load gradient image:", err);
+              };
+            }
+
+          })
+          .catch(err => {
+            alert('Gagal mengambil data berita: ' + err);
+          })
+          .finally(() => {
+            modalOverlay.style.display = 'none';
+            modalLoader.style.display = 'none';
+          });
+      }
+    });
+  }
 });
+
+    // --- Customize Section Toggle ---
+    const customizeHeader = document.getElementById('customizeSectionHeader');
+    const customizeContent = document.getElementById('customizeSection');
+    const customizeIcon = document.getElementById('customizeToggleIcon');
+    if (customizeHeader && customizeContent && customizeIcon) {
+      customizeHeader.addEventListener('click', function() {
+        if (customizeContent.style.display === 'none') {
+          customizeContent.style.display = '';
+          customizeIcon.textContent = '▼';
+        } else {
+          customizeContent.style.display = 'none';
+          customizeIcon.textContent = '▶';
+        }
+      });
+    }
+
+    // --- Template Modal Logic ---
+    const openTemplateModalBtn = document.getElementById('openTemplateModalBtn');
+    const templateModal = document.getElementById('templateModal');
+    const closeTemplateModalBtn = document.getElementById('closeTemplateModal');
+    const templateOptionsDiv = document.getElementById('templateOptions');
+
+    if (openTemplateModalBtn && templateModal && closeTemplateModalBtn && templateOptionsDiv) {
+      openTemplateModalBtn.addEventListener('click', () => {
+        templateModal.style.display = 'block';
+      });
+
+      closeTemplateModalBtn.addEventListener('click', () => {
+        templateModal.style.display = 'none';
+      });
+
+      // Close modal on overlay click
+      window.addEventListener('click', (event) => {
+        if (event.target === templateModal) {
+          templateModal.style.display = 'none';
+        }
+      });
+
+      // --- Template Selection Logic ---
+      console.log("Attaching templateOptionsDiv click listener"); // Added log
+      templateOptionsDiv.addEventListener('click', (event) => {
+        console.log("Template option clicked:", event.target); // Added log
+        const targetButton = event.target.closest('.template-option');
+        if (targetButton) {
+          const templateId = targetButton.dataset.templateId;
+          applyTemplate(templateId); // Call function to apply the template
+          templateModal.style.display = 'none'; // Close modal after selection
+        }
+      });
+    }
+
+// =========================
+// Loader Overlay Functions
+// =========================
+function showLoader() {
+  const loader = document.getElementById('loaderModal');
+  if (loader) loader.classList.add('active');
+}
+function hideLoader() {
+  const loader = document.getElementById('loaderModal');
+  if (loader) loader.classList.remove('active');
+}
+// Optional: expose globally
+window.showLoader = showLoader;
+window.hideLoader = hideLoader;
 
 
 // Window Resize Listener (Update handles for ALL elements in ALL canvases)
@@ -265,6 +461,16 @@ window.addEventListener('resize', function() {
     });
 });
 
+// Add this to the DOMContentLoaded event listener in main.js
+document.addEventListener('click', function(event) {
+    // Check if the click is outside any canvas-instance
+    if (!event.target.closest('.canvas-instance')) {
+        // Deactivate all elements in all canvases
+        deactivateAllElements();
+        // Clear any active text element
+        clearActiveTextElement();
+    }
+});
 
 // --- Export Functionality ---
 // Export specific canvas content as PNG using html2canvas
@@ -283,7 +489,7 @@ function exportAsPNG(targetCanvasElement) { // Accept target canvas as argument
     if (activeElementInCanvas) {
         activeElementInCanvas.classList.remove('active'); // Temporarily remove class to hide outline
         // Hide its handles explicitly as they might be positioned outside the element bounds slightly
-         if (activeElementInCanvas.deleteBtn) activeElementInCanvas.deleteBtn.style.visibility = 'hidden';
+         if (activeElementInCanvas.deleteBtn) activeElementInCanvas.style.visibility = 'hidden';
          if (activeElementInCanvas.resizeHandle) activeElementInCanvas.resizeHandle.style.visibility = 'hidden';
          if (activeElementInCanvas.rotateHandle) activeElementInCanvas.rotateHandle.style.visibility = 'hidden';
          if (activeElementInCanvas.moveBtn) activeElementInCanvas.moveBtn.style.visibility = 'hidden';
@@ -296,7 +502,7 @@ function exportAsPNG(targetCanvasElement) { // Accept target canvas as argument
     html2canvas(targetCanvasElement, { // Use the passed canvas element
         logging: false, // Disable logging unless debugging
         useCORS: true,
-        scale: 2, // Upscale output 2x (from 500x625 to 1000x1250)
+        scale: 2.7, // Upscale output 2.7x (from 400x500 to 1080x1350)
         backgroundColor: window.getComputedStyle(targetCanvasElement).backgroundColor || '#ffffff' // Use actual background or default white
     }).then(canvas => {
         const link = document.createElement('a');
@@ -333,3 +539,73 @@ function exportAsPNG(targetCanvasElement) { // Accept target canvas as argument
 
 // Note: Global drag listeners (currentDrag, currentResize) from original main.js are removed
 // as that logic is now encapsulated within element.js event listeners (setupMoveDrag, setupResize, etc.)
+
+// --- Template Application Logic ---
+
+// Function to dynamically load CSS files
+function loadCSS(href) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.href = href;
+
+    // Check if the CSS is already loaded
+    // Create a temporary anchor element to resolve the href to a full URL
+    const tempLink = document.createElement('a');
+    tempLink.href = href;
+    const fullHref = tempLink.href;
+
+    const existingLinks = document.querySelectorAll('link[rel="stylesheet"]');
+    for (let i = 0; i < existingLinks.length; i++) {
+        // Compare the full resolved URLs or pathnames
+        const existingLink = document.createElement('a');
+        existingLink.href = existingLinks[i].href;
+        if (existingLink.pathname === tempLink.pathname) {
+            console.log(`CSS file ${href} already loaded.`);
+            return; // Don't load if already exists
+        }
+    }
+
+    document.head.appendChild(link);
+    console.log(`Loaded CSS file: ${href}`);
+}
+
+// Function to apply a selected template
+function applyTemplate(templateId) {
+    const activeCanvas = getActiveCanvas();
+    if (!activeCanvas) {
+        console.error("No active canvas found to apply template.");
+        return;
+    }
+    console.log("applyTemplate");
+    // Get data from controls
+    //const titleText = document.getElementById('textTitle')?.value || '';
+    const summaryText = document.getElementById('textSummary')?.value || '';
+
+    // Apply template based on ID
+    switch (templateId) {
+        case 'template1':
+            console.log("Applying Template 1");
+            // Load template-specific CSS
+            loadCSS('css/template-style.css');
+            break;
+        case 'template2':
+            console.log("Applying Template 2");
+            // Template 2: Image + Summary
+            if (summaryText) {
+                 const summaryElement = createElement(summaryText, activeCanvas);
+                 if(summaryElement) {
+                    summaryElement.style.top = '150px'; // Example positioning
+                    summaryElement.style.left = '50px'; // Example positioning
+                    summaryElement.style.fontSize = '16px'; // Example style
+                 }
+            }
+            // Load template-specific CSS
+            loadCSS('css/templates/template2.css');
+            break;
+        // Add more cases for other templates
+        default:
+            console.warn(`Unknown template ID: ${templateId}`);
+            break;
+    }
+}

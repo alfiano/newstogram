@@ -2,7 +2,9 @@
 
 // Convert image URL to Data URL using a proxy
 function toDataURLProxy(url) {
-    return fetch(`https://tes-api7.agep.web.id/stream-image?url=${encodeURIComponent(url)}`)
+  //const endpoint = 'https://tes-api7.agep.web.id';
+  const endpoint = 'http://localhost:3000';
+    return fetch(`${endpoint}/stream-image?url=${encodeURIComponent(url)}`)
       .then(response => {
         if (!response.ok) throw new Error('Error fetching image from proxy.');
         return response.blob();
@@ -13,122 +15,148 @@ function toDataURLProxy(url) {
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       }));
-  }
-  
+  }  
   // Fetch data from the API and update the UI
-  document.getElementById('fetchDataBtn').addEventListener('click', function() {
-    const userUrl = document.getElementById('apiUrl').value.trim();
-    const loader = document.getElementById('loader');
-    if (!userUrl) {
-      alert('Silakan masukkan URL website terlebih dahulu.');
-      return;
-    }
-    loader.style.display = 'block';
-    const language = document.getElementById('languageSelect').value;
-    
-    // Use our backend API to scrape the website entered by the user
-    const backendApiUrl = `https://tes-api7.agep.web.id/scrape?url=${encodeURIComponent(userUrl)}&lang=${encodeURIComponent(language)}`;
-    
-    fetch(backendApiUrl)
-      .then(response => response.json())
-      .then(data => {
-        const textTitle = document.getElementById('textTitle');
-        const textDescription = document.getElementById('textDescription');
-        
-        // Update title options
-        if (data.judul && Array.isArray(data.judul)) {
-          textTitle.innerHTML = "";
-          data.judul.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item;
-            option.innerText = item;
-            textTitle.appendChild(option);
-          });
-        }
-        
-        // Update description
-        if (data.isi) {
-          textDescription.value = data.isi;
-        }
-        
-        // Update images
-        if (data.gambar || data.thumbnail) {
-          const imagePanel = document.getElementById('imagePanel');
-          imagePanel.innerHTML = "";
-          const allImages = [];
-          if (data.gambar && Array.isArray(data.gambar)) {
-            allImages.push(...data.gambar);
+  const fetchDataBtn = document.getElementById('fetchDataBtn');
+  if (fetchDataBtn) {
+      //const endpoint = 'https://tes-api7.agep.web.id';
+    const endpoint = 'http://localhost:3000';
+    fetchDataBtn.addEventListener('click', function() {
+      const userUrl = document.getElementById('apiUrl').value.trim();
+      if (!userUrl) {
+        alert('Silakan masukkan URL website terlebih dahulu.');
+        return;
+      }
+      showLoader(); // Use the global function
+      const language = document.getElementById('languageSelect').value;
+      
+      // Use our backend API to scrape the website entered by the user
+      const backendApiUrl = `${endpoint}/scrape?url=${encodeURIComponent(userUrl)}&lang=${encodeURIComponent(language)}`;
+      
+      fetch(backendApiUrl)
+        .then(response => response.json())
+        .then(data => {
+          const textTitle = document.getElementById('textTitle');
+          const textDescription = document.getElementById('textDescription');
+          
+          // Update title options
+          if (data.judul && Array.isArray(data.judul)) {
+            textTitle.innerHTML = "";
+            data.judul.forEach(item => {
+              const option = document.createElement('option');
+              option.value = item;
+              option.innerText = item;
+              textTitle.appendChild(option);
+            });
           }
-          if (data.thumbnail) {
-            allImages.push(data.thumbnail);
+          
+          // Update description
+          if (data.isi) {
+            textDescription.value = data.isi;
           }
-          allImages.forEach((imgUrl, index) => {
-            toDataURLProxy(imgUrl)
-              .then(dataUrl => {
-                const imgEl = document.createElement('img');
-                imgEl.src = dataUrl;
-                imgEl.alt = "Gambar " + (index + 1);
-                imgEl.addEventListener('click', function() {
+
+          // Update summary
+          if (data.summary) {
+            const textSummary = document.getElementById('textSummary');
+            if (textSummary) {
+              textSummary.value = data.summary;
+            }
+          }
+          
+          // Update images
+          if (data.gambar || data.thumbnail) {
+            const imagePanel = document.getElementById('imagePanel');
+            imagePanel.innerHTML = "";
+            const allImages = [];
+            if (data.gambar && Array.isArray(data.gambar)) {
+              allImages.push(...data.gambar);
+            }
+            if (data.thumbnail) {
+              allImages.push(data.thumbnail);
+            }
+            allImages.forEach((imgUrl, index) => {
+              toDataURLProxy(imgUrl)
+                .then(dataUrl => {
+                  const imgEl = document.createElement('img');
+                  imgEl.src = dataUrl;
+                  imgEl.alt = "Gambar " + (index + 1);
+                  imgEl.addEventListener('click', function() {
+                    const activeCanvas = getActiveCanvas(); // Get active canvas
+                    if (!activeCanvas) {
+                        alert("Please select a canvas first.");
+                        return;
+                    }
+                    const imgObj = new Image();
+                    imgObj.src = dataUrl;
+                    imgObj.onload = function() {
+                      createElement(imgObj, activeCanvas); // Pass active canvas
+                    }
+                  });
+                  imagePanel.appendChild(imgEl);
+                })
+                .catch(err => console.error('Error converting image:', err));
+            });
+
+            if (allImages.length > 0) {
+              toDataURLProxy(allImages[0])
+                .then(dataUrl => {
                   const activeCanvas = getActiveCanvas(); // Get active canvas
-                  if (!activeCanvas) {
-                      alert("Please select a canvas first.");
-                      return;
-                  }
+                  if (!activeCanvas) return; // Don't auto-add if no canvas is active/exists
                   const imgObj = new Image();
                   imgObj.src = dataUrl;
                   imgObj.onload = function() {
+                    imgObj.style.zIndex = 1;
                     createElement(imgObj, activeCanvas); // Pass active canvas
                   }
-                });
-                imagePanel.appendChild(imgEl);
-              })
-              .catch(err => console.error('Error converting image:', err));
-          });
+                })
+                .catch(err => console.error('Error auto inserting image:', err));
+            }
 
-          if (allImages.length > 0) {
-            toDataURLProxy(allImages[0])
-              .then(dataUrl => {
-                const activeCanvas = getActiveCanvas(); // Get active canvas
-                if (!activeCanvas) return; // Don't auto-add if no canvas is active/exists
-                const imgObj = new Image();
-                imgObj.src = dataUrl;
-                imgObj.onload = function() {
-                  imgObj.style.zIndex = 1;
-                  createElement(imgObj, activeCanvas); // Pass active canvas
-                }
-              })
-              .catch(err => console.error('Error auto inserting image:', err));
           }
 
-        }
-
-        if (data.judul && Array.isArray(data.judul) && data.judul.length > 0) {
-            const activeCanvas = getActiveCanvas(); // Get active canvas
-            if (activeCanvas) { // Only add if a canvas is active
-                const titleEl = document.createElement('h3'); // Create the editable element directly
-                titleEl.contentEditable = true;
-                titleEl.className = 'editable-text autoTextInserted'; // Add classes
-                titleEl.style.margin = "0";
-                titleEl.style.padding = "10px";
-                // titleEl.style.position = "absolute"; // Handled by wrapper
-                titleEl.style.color = "#000";
-                titleEl.style.fontFamily ="Arial";
-                titleEl.style.lineHeight = "22px";
-                //titleEl.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-                titleEl.style.zIndex = 10; // Maybe apply to wrapper instead
-                titleEl.innerText = data.judul[0];
-                createElement(titleEl, activeCanvas); // Pass element and active canvas
+          // Add logic for gradient_layer.png after other images are processed
+          const activeCanvas = getActiveCanvas(); // Get active canvas
+          if (activeCanvas) { // Only add if a canvas is active
+            const imgObj = new Image();
+            imgObj.src = 'assets/gradient_layer.png';
+            imgObj.onload = function() {
+              imgObj.dataset.isGradient = 'true'; // Add data attribute to identify gradient layer
+              // z-index is handled in createElement based on data attribute
+              createElement(imgObj, activeCanvas); // Pass active canvas
+            }
+            imgObj.onerror = function() {
+              console.error('Error loading gradient_layer.png');
             }
           }
-      })
-      .catch(error => {
-        console.error('Error fetching data:', error);
-        alert('Gagal mengambil data dari API.');
-      })
-      .finally(() => {
-        loader.style.display = 'none';
-      });
-  });
+
+          if (data.judul && Array.isArray(data.judul) && data.judul.length > 0) {
+              const activeCanvas = getActiveCanvas(); // Get active canvas
+              if (activeCanvas) { // Only add if a canvas is active
+                  const titleEl = document.createElement('h3'); // Create the editable element directly
+                  titleEl.contentEditable = true;
+                  titleEl.className = 'editable-text autoTextInserted'; // Add classes
+                  titleEl.style.margin = "0";
+                  titleEl.style.padding = "10px";
+                  // titleEl.style.position = "absolute"; // Handled by wrapper
+                  //titleEl.style.color = "#000";
+                  titleEl.style.fontFamily ="Arial";
+                  titleEl.style.lineHeight = "22px";
+                  //titleEl.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                  titleEl.style.zIndex = 10; // Maybe apply to wrapper instead
+                  titleEl.innerText = data.judul[0];
+                  createElement(titleEl, activeCanvas); // Pass element and active canvas
+              }
+            }
+        })
+        .catch(error => {
+          console.error('Error fetching data:', error);
+          alert('Gagal mengambil data dari API.');
+        })
+        .finally(() => {
+          hideLoader(); // Use the global function
+        });
+    });
+  }
   
   // Handle image uploads from the user
   document.getElementById('imageUpload').addEventListener('change', function(e) {

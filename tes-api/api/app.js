@@ -160,8 +160,6 @@ app.get('/scrape', async (req, res) => {
         }
       }
 
-      // If no images found in content, try to find a featured image or thumbnail
-      if (imageSources.length === 0) {
         // Look for common thumbnail or featured image selectors
         const featuredImg = document.querySelector('.featured-image img') || 
                             document.querySelector('.thumbnail img') ||
@@ -177,7 +175,6 @@ app.get('/scrape', async (req, res) => {
             imageSources.push(absoluteSrc);
           }
         }
-      }
     // Filter images by size (at least 400px in width or height)
     let images = [];
     let thumbnail = "";
@@ -206,36 +203,40 @@ app.get('/scrape', async (req, res) => {
       images.push(thumbnail);
     }
 
-    // --- MODIFIKASI UNTUK 3 KANDIDAT JUDUL ---
-    const translationPrompt = `Translate the following news content into ${targetLang} and create 3 engaging title candidates that entice readers to click.
-Output MUST be a valid JSON string with exactly two keys: "judul" containing an array of 3 titles and "isi" for the translated content. Do not include any extra text outside the JSON.
+    // --- MODIFIKASI: SATU PROMPT UNTUK JUDUL, ISI, DAN SUMMARY SEKALIGUS ---
+    const allInOnePrompt = `Translate the following news content into ${targetLang}, create 3 engaging title candidates, and summarize the content.
+Output MUST be a valid JSON string with exactly three keys:
+- "judul": an array of 3 click-enticing titles in ${targetLang}
+- "isi": the translated news content in ${targetLang}
+- "summary": a concise summary in ${targetLang}
+Do not include any extra text outside the JSON.
 ---
 Content: ${originalContent}`;
 
-    const translationResponse = await openai.chat.completions.create({
+    const allInOneResponse = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: "You are a news content writer tasked with translating text into " + targetLang + ". Translate the given content into " + targetLang + " and create three engaging title candidates that make users click. Output must be valid JSON with exactly two keys: 'judul' as an array containing three candidate titles and 'isi' for the translated content. Do not include any additional text or explanation."
+          content: `You are a news content writer and summarizer. Translate the given content into ${targetLang}, create three engaging title candidates, and summarize the content. Output must be valid JSON with exactly three keys: 'judul' (array of 3 titles), 'isi' (translated content), and 'summary' (concise summary). Do not include any additional text or explanation.`
         },
         {
           role: "user",
-          content: translationPrompt
+          content: allInOnePrompt
         }
       ],
       temperature: 1,
-      max_tokens: 2048,
+      max_tokens: 2300,
       top_p: 1,
       frequency_penalty: 0,
       presence_penalty: 0,
     });
 
-    console.log("Translation response:", translationResponse);
-    if (!translationResponse || !translationResponse.choices) {
+    console.log("All-in-one response:", allInOneResponse);
+    if (!allInOneResponse || !allInOneResponse.choices) {
       throw new Error("Respons dari OpenAI tidak memiliki properti 'choices'.");
     }
-    const translationText = translationResponse.choices[0].message.content;
+    const allInOneText = allInOneResponse.choices[0].message.content;
 
     function cleanJsonText(text) {
       let cleaned = text.trim();
@@ -245,12 +246,13 @@ Content: ${originalContent}`;
       return cleaned;
     }
 
-    const cleanedTranslationText = cleanJsonText(translationText);
+    const cleanedAllInOneText = cleanJsonText(allInOneText);
 
     let candidateTitles = [];
     let translatedIsi = originalContent;
+    let summaryText = "";
     try {
-      const parsed = JSON.parse(cleanedTranslationText);
+      const parsed = JSON.parse(cleanedAllInOneText);
       if (parsed.judul && Array.isArray(parsed.judul) && parsed.judul.length === 3) {
         candidateTitles = parsed.judul.map(j => j.trim()).filter(j => j.length > 0);
         if (candidateTitles.length !== 3) {
@@ -262,17 +264,20 @@ Content: ${originalContent}`;
         candidateTitles = [originalTitle];
       }
       translatedIsi = parsed.isi && parsed.isi.trim().length > 0 ? parsed.isi : originalContent;
+      summaryText = parsed.summary && parsed.summary.trim().length > 0 ? parsed.summary : "";
     } catch (e) {
-      console.error("Gagal parsing hasil terjemahan sebagai JSON:", e);
+      console.error("Gagal parsing hasil all-in-one sebagai JSON:", e);
       candidateTitles = [originalTitle];
       translatedIsi = "";
+      summaryText = "";
     }
 
     res.json({
       judul: candidateTitles,
       isi: translatedIsi,
       gambar: images,
-      thumbnail: thumbnail
+      thumbnail: thumbnail,
+      summary: summaryText
     });
   } catch (error) {
     console.error(error);

@@ -91,11 +91,11 @@ function updateAllHandles(wrapper) {
   // Resize Handle (Bottom-Right Corner) - Adjusted slightly outwards
   positionHandle(wrapper.resizeHandle, halfWidth + 5, halfHeight + 5);
 
-  // Rotate Handle (Top-Right Corner) - Adjusted slightly outwards
-  positionHandle(wrapper.rotateHandle, halfWidth + 5, -halfHeight - 5);
+  // Rotate Handle (Top-Center) - Adjusted slightly outwards vertically
+  positionHandle(wrapper.rotateHandle, 0, -halfHeight - 5);
 
-  // Move Button (Bottom-Left Corner) - Adjusted slightly outwards
-  positionHandle(wrapper.moveBtn, -halfWidth - 5, halfHeight + 5);
+  // Move Button (Bottom-Center) - Adjusted slightly outwards vertically
+  positionHandle(wrapper.moveBtn, 0, halfHeight + 5);
 }
 
 // Get mouse or touch position
@@ -134,8 +134,12 @@ function createElement(content, targetCanvas) {
   // Check if content is from auto-inserted image (assuming class is still relevant)
   if (content instanceof HTMLElement && content.classList.contains('autoTextInserted')) {
     wrapper.className = 'element autoTextInserted'; // Keep element class for selection
-    wrapper.style.width = '400px';
-    wrapper.style.height = '150px';
+    wrapper.style.width = '370px';
+    wrapper.style.height = '85px';
+    wrapper.style.left = '30px';
+    wrapper.style.top = '330px';
+    wrapper.style.color ='#fff';
+    wrapper.style.fontSize = '20px';
     wrapper.style.bottom = '0px';
   } else {
     wrapper.className = 'element'; // Keep element class
@@ -149,12 +153,21 @@ function createElement(content, targetCanvas) {
   contentDiv.style.height = '100%';
 
   // --- Handle Content Type (Image, Existing Element, or Text) ---
-  if (content instanceof HTMLImageElement) {
+  if (content instanceof HTMLImageElement && content.src.endsWith('assets/gradient_layer.png')) {
+    wrapper.className ='element asset-image';
+    wrapper.style.zIndex = '99990'; // Set z-index for the gradient layer
+    content.style.width = '100%';
+    content.style.height = '100%';
+    content.style.display = 'block';
+    contentDiv.appendChild(content);
+  } else if (content instanceof HTMLImageElement) {
+    wrapper.style.zIndex = '0'; // Set z-index for API images
     content.style.width = '100%';
     content.style.height = '100%';
     content.style.display = 'block';
     contentDiv.appendChild(content);
   } else if (content instanceof HTMLElement && content.classList.contains('editable-text')) {
+    wrapper.style.zIndex = '99999'; // Set z-index for text elements
     // If it's already an editable text element (e.g., from description)
     const textElement = content; // Reuse the element
     textElement.addEventListener('click', function(e) {
@@ -164,6 +177,7 @@ function createElement(content, targetCanvas) {
     });
     contentDiv.appendChild(textElement);
   } else {
+    wrapper.style.zIndex = '99999'; // Set z-index for text elements
     // Assume it's plain text content, create a new editable paragraph
     const textElement = document.createElement('p');
     textElement.innerText = content;
@@ -193,7 +207,7 @@ function createElement(content, targetCanvas) {
   deleteBtn.innerHTML = '✖';
   deleteBtn.className = 'control-button delete-button';
   deleteBtn.style.position = 'absolute';
-  deleteBtn.style.zIndex = '1001';
+  deleteBtn.style.zIndex = '99999';
   deleteBtn.style.touchAction = 'none';
   deleteBtn.style.display = 'none';
   canvasContainer.appendChild(deleteBtn); // Append to the correct container
@@ -220,10 +234,10 @@ function createElement(content, targetCanvas) {
 
   // Move button (Bottom-Left)
   const moveBtn = document.createElement('button');
-  moveBtn.innerHTML = '↔';
+  moveBtn.innerHTML = '✥';
   moveBtn.className = 'control-button move-button';
   moveBtn.style.position = 'absolute';
-  moveBtn.style.zIndex = '1001';
+  moveBtn.style.zIndex = '99999';
   moveBtn.style.touchAction = 'none';
   moveBtn.style.cursor = 'move';
   moveBtn.title = 'Drag to move';
@@ -273,8 +287,9 @@ function createElement(content, targetCanvas) {
   // Resize handle (Bottom-Right)
   const resizeHandle = document.createElement('div');
   resizeHandle.className = 'resize-handle';
+  resizeHandle.innerHTML = '↔';
   resizeHandle.style.position = 'absolute';
-  resizeHandle.style.zIndex = '1001';
+  resizeHandle.style.zIndex = '99999';
   resizeHandle.style.touchAction = 'none';
   resizeHandle.style.cursor = 'nwse-resize';
   resizeHandle.style.display = 'none';
@@ -338,7 +353,7 @@ function createElement(content, targetCanvas) {
   rotateHandle.innerHTML = '↻';
   rotateHandle.className = 'control-button rotate-handle';
   rotateHandle.style.position = 'absolute';
-  rotateHandle.style.zIndex = '1001';
+  rotateHandle.style.zIndex = '99999';
   rotateHandle.style.touchAction = 'none';
   rotateHandle.style.cursor = 'alias';
   rotateHandle.style.display = 'none';
@@ -591,3 +606,4 @@ function addCanvasDeactivationListener(canvasElement) {
 //     }
 // });
 // Note: Initial setup might be better handled in main.js after the first canvas is confirmed ready.
+

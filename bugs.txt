@@ -1,0 +1,19 @@
+bugs:
+
+"gambar": [
+    "https://investor.id/img/articleIDTVLite.webp",
+    "https://img2.beritasatu.com/cache/investor/960x620-3/2024/07/1721721369-850x459.webp"
+  ],
+  "thumbnail": "https://investor.id/img/articleIDTVLite.webp",
+
+  tidak bisa menampilkan gambar di panel
+
+note
+tambahkan z-index 0 ke elemen gambar
+masukkan default gambar transparan gradien dan set index ke 1
+
+allowed sites:
+theguardian.com
+eonline.com
+https://www.thesun.co.uk
+https://www.tribalfootball.com/

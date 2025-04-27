@@ -1,8 +1,8 @@
 :root {
-  --primary-color: #4a90e2; /* A modern blue */
-  --secondary-color: #f4f7f6; /* Light gray background */
-  --text-color: #333;
-  --border-color: #e0e0e0;
+  --primary-color: #457b9d;
+  --secondary-color: #fff;
+  --text-color: #ababab;
+  --border-color: #252525;
   --shadow-color: rgba(0, 0, 0, 0.1);
   --font-family: 'Inter', sans-serif;
 }
@@ -12,7 +12,8 @@ body {
   color: var(--text-color);
   margin: 0;
   background-color: var(--secondary-color);
-  line-height: 1.6;
+  line-height: 1.4;
+  font-size: 75%;
 }
 
 /* Container utama */
@@ -113,10 +114,10 @@ body {
   padding: 20px; /* Slightly reduce padding */
   box-sizing: border-box;
   border-right: 1px solid var(--border-color);
-  background-color: #fff;
+  background-color:var(--secondary-color);
   display: flex;
   flex-direction: column;
-  gap: 10px; /* Reduce spacing between control groups */
+  gap: 0; /* Reduce spacing between control groups */
   flex-shrink: 0; /* Prevent controls from shrinking */
   overflow-y: auto; /* Allow controls to scroll if content overflows */
   height: 100%; /* Make controls take full height of editor-row */
@@ -247,10 +248,10 @@ body {
   flex-grow: 1; /* Restore flex-grow */
 }
 
-/* Adjust padding inside the canvas container */
+/* Adjust padding inside the canvas container
 #allCanvasesContainer > .canvas-instance:first-child {
-  /* Maybe add padding-top if needed */
-}
+  /* Maybe add padding-top if needed 
+}*/
 
 /* Individual canvas instance wrapper */
 .canvas-instance {
@@ -305,17 +306,17 @@ body {
 
 .canvas-instance.active-canvas-instance .canvas {
   /* Maybe add a more prominent shadow or outline to the canvas itself when active */
-   box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4); /* Blue shadow for active */
+   box-shadow: 0 0px 3px rgba(74, 144, 226, 0.4) /* Blue shadow for active */
 }
 
 /* Styles for the actual canvas div inside the instance */
 .canvas {
-  width: 500px; /* Keep fixed size */
-  height: 625px;
+  width: 400px; /* Keep fixed size */
+  height: 500px;
   border: none;
   position: relative;
   overflow: hidden;
-  background-color: #fff;
+  background-color: #fbfbfb;
   box-shadow: 0 4px 15px var(--shadow-color);
   cursor: pointer; /* Indicate canvas area is clickable for activation */
   transition: box-shadow 0.3s ease; /* Smooth shadow transition */
@@ -339,7 +340,7 @@ body {
   position: absolute;
   user-select: none;
   min-width: 50px;
-  min-height: 50px;
+  /* min-height: 50px; */
 }
 
 /* Konten di dalam wrapper */
@@ -366,6 +367,7 @@ body {
   justify-content: center;
   color: white;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  text-align: center;
 }
 
 .resize-handle {
@@ -374,11 +376,11 @@ body {
   bottom: -12px;
 }
 /* Add simple icon for resize */
-.resize-handle::before {
-  content: '↔'; /* Simple resize symbol */
+/*.resize-handle::before {
+  content: '↔'; /* Simple resize symbol
   font-size: 12px;
   transform: rotate(45deg);
-}
+}*/
 
 
 .rotate-handle {
@@ -389,10 +391,9 @@ body {
   font-size: 14px; /* Adjust icon size */
 }
 /* Add rotate icon */
-.rotate-handle::before {
-  content: '↻'; /* Rotate symbol */
-}
-
+/*.rotate-handle::before {
+  content: '↻'; /* Rotate symbol
+}*/
 
 .delete-btn {
   cursor: pointer;
@@ -406,10 +407,12 @@ body {
   content: '×'; /* Close symbol */
   font-weight: bold;
 }
-
+.autoTextInserted {
+  z-index: 1000;
+}
 
 .element.active {
-  outline: 2px solid var(--primary-color); /* Use primary color for outline */
+  outline: 2px dashed var(--primary-color); /* Use primary color for outline */
 }
 
 .element.active .resize-handle,
@@ -444,10 +447,11 @@ body {
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
   cursor: move;
   font-size: 14px;
+  padding: 0;
 }
-.move-button::before {
-    content: '✥'; /* Move symbol */
-}
+/*.move-button::before {
+    content: '✥'; /* Move symbol
+}*/
 
 
 /* Hide original move button if it still exists with old class */
@@ -499,11 +503,118 @@ select {
   padding: 10px 12px; /* More padding */
   margin-bottom: 8px; /* Reduce space below inputs */
   box-sizing: border-box;
+  background: #fff;
   border: 1px solid var(--border-color);
   border-radius: 4px;
   font-family: var(--font-family);
   font-size: 0.95em;
   transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+/* =========================
+   Loader Overlay (Floating)
+   ========================= */
+#loaderModal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.35);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+#loaderModal.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+
+.loader-spinner {
+  display: inline-block;
+  width: 48px;
+  height: 48px;
+  border: 5px solid #eee;
+  border-top: 5px solid #4a90e2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 18px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg);}
+  100% { transform: rotate(360deg);}
+}
+
+/* Modal Overlay & Box */
+.modal-overlay, .modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(51, 51, 51, 0.45);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-box {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  padding: 32px 24px 24px 24px;
+  min-width: 320px;
+  max-width: 95vw;
+  width: 400px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: modalPopIn 0.18s cubic-bezier(.4,1.4,.6,1) both;
+}
+@keyframes modalPopIn {
+  0% { transform: scale(0.92) translateY(30px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.modal-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #888;
+  cursor: pointer;
+  transition: color 0.2s;
+  z-index: 10;
+}
+.modal-close-btn:hover {
+  color: #e74c3c;
+}
+.create-post-btn {
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 20px;
+  font-size: 1.1em;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  transition: background 0.18s;
+}
+.create-post-btn:hover {
+  background-color: #357abd;
+}
+#modalLoader {
+  color: var(--primary-color);
+  font-size: 1em;
+  margin-top: 8px;
 }
 
 input[type="text"]:focus,
@@ -535,7 +646,10 @@ button {
   margin-right: 5px; /* Spacing between buttons if inline */
   margin-bottom: 5px; /* Add bottom margin for spacing */
 }
-
+.delete-button{
+  padding: 0 5px;
+  background: red;
+}
 button:hover {
   background-color: #3a7bc8; /* Darker shade on hover */
 }
@@ -552,7 +666,6 @@ button:active {
 
 input[type="file"] {
   border: 1px dashed var(--border-color); /* Dashed border for file input */
-  background-color: var(--secondary-color);
   padding: 15px;
   text-align: center;
 }
@@ -585,7 +698,8 @@ input[type="file"]:hover::file-selector-button {
 /* Edit Panel Styles */
 .edit-panel { /* Now using class selector */
   position: absolute; /* Position relative to canvas-container */
-  top: 0; /* Position above the canvas */
+  top: 505px; /* Position below the canvas (adjust as needed) */
+  width: 400px;
   left: 50%;
   transform: translateX(-50%);
   background: white;
@@ -597,6 +711,40 @@ input[type="file"]:hover::file-selector-button {
   gap: 8px; /* Adjust gap */
   align-items: center; /* Align items vertically */
 }
+
+/* Styles for the new color picker group */
+.color-picker-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  position: relative;
+}
+
+/* Style for the label acting as the button */
+.color-picker-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #eee;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.color-picker-label:hover {
+  background-color: #ddd;
+}
+
+.color-picker-label .icon {
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+.color-picker-label .label-text {
+  font-size: 0.9em;
+}
+
 
 /* Use class selectors for controls inside edit panel */
 .edit-panel .fontFamily,
@@ -610,15 +758,19 @@ input[type="file"]:hover::file-selector-button {
   border-radius: 4px;
   font-size: 0.9em;
   margin: 0; /* Reset margin */
+  display: inline-block; /* Make elements display inline */
+  width: 68px;
 }
 
 .edit-panel .textColor,
-.edit-panel .textBgColor { /* Style color inputs */
+.edit-panel .textBgColor, .edit-panel .elementBgColor { /* Style color inputs */
   width: 30px;
   height: 30px;
   padding: 2px;
   border: none;
   cursor: pointer;
+  position: absolute;
+  opacity: 0;
 }
 
 .edit-panel .bgOpacity { /* Style range input */
@@ -632,7 +784,7 @@ input[type="file"]:hover::file-selector-button {
   cursor: pointer;
   background-color: #eee;
   color: var(--text-color);
-  min-width: 30px;
+  width: 32px;
 }
 .edit-panel .boldText:hover {
   background-color: #ddd;
@@ -641,10 +793,22 @@ input[type="file"]:hover::file-selector-button {
 .edit-panel label { /* Style labels within panel */
   font-size: 0.85em;
   color: #555;
-  margin-right: 2px; /* Adjust spacing */
-  margin-left: 5px;
+  display: inline-block; /* Make labels display inline */
+}
+.opacity-control {
+  display: inline-flex;
+  flex-direction: column;
+  width: 75px;
+  align-items: center;
 }
 
+.opacity-control label {
+  font-size: 12px;
+}
+
+.opacity-control .bgOpacity {
+  width: 100%;
+}
 
 /* Hide original resize/rotate/move buttons inside element (redundant but safe) */
 .element button.move-btn,
@@ -671,7 +835,6 @@ input[type="file"]:hover::file-selector-button {
   font-size: 1.2em;
   width: 40px;
   height: 40px;
-  display: flex;
   align-items: center;
   justify-content: center;
 }
@@ -739,14 +902,9 @@ input[type="file"]:hover::file-selector-button {
     padding: 15px; /* Adjust padding */
     margin-top: 0; /* Remove margin, handled by controls padding */
     align-items: flex-start; /* Align canvas to top */
-    min-height: calc(100vh - 70px); /* Adjust height considering potential edit panel */
   }
 
   /* Adjust canvas container on mobile - remove outer padding */
-   .canvas-container {
-    padding: 0; /* Remove padding, handled by instance */
-    width: 100%; /* Ensure it takes full width of instance */
-   }
 
   /* Adjust canvas size on mobile */
   .canvas {
@@ -833,8 +991,7 @@ input[type="file"]:hover::file-selector-button {
   align-items: center; /* Vertically align items */
   justify-content: center; /* Center thumbnails horizontally */
   padding: 15px 0; /* Vertical padding only */
-  background-color: #fff; /* White background */
-  /* border-top: 1px solid var(--border-color); */ /* Removed border */
+  border-top: 1px solid var(--border-color);
   overflow-x: auto; /* Allow horizontal scrolling if needed */
   gap: 15px; /* Space between thumbnails and button */
   width: 100%; /* Span full width */
@@ -956,4 +1113,43 @@ input[type="file"]:hover::file-selector-button {
   .add-slide-btn .add-slide-text {
     font-size: 0.7em;
   }
+}
+
+/* Header Styles */
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: var(--secondary-color); /* Light grey background */
+  border-bottom: 1px solid var(--border-color); /* Subtle border at the bottom */
+}
+
+.site-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333; /* Dark grey color */
+}
+
+.site-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 20px; /* Space between menu items */
+}
+
+.site-nav li {
+  display: inline;
+}
+
+.site-nav a {
+  text-decoration: none;
+  color: var(--primary-color);
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.site-nav a:hover {
+  color: #000; /* Darker color on hover */
 }

@@ -23,7 +23,7 @@ document.getElementById('addTextBtn').addEventListener('click', function() {
     titleEl.style.zIndex = '10'; // z-index might be better on the wrapper
     titleEl.style.color = "#fff";
     titleEl.style.fontFamily ="Arial";
-    titleEl.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    //titleEl.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
     titleEl.style.lineHeight = "22px";
     titleEl.innerText = selectedTitle;
 
@@ -47,9 +47,61 @@ document.getElementById('addTextareaBtn').addEventListener('click', function() {
     descEl.className = 'editable-text'; // Add class
     descEl.style.margin = "0";
     descEl.style.padding = "8px"; // Add some padding
+    descEl.style.maxHeight = "500px"; // Set max height
+    descEl.style.overflowY = "auto"; // Add scrollbar if content exceeds max height
     descEl.innerText = descriptionValue;
 
     createElement(descEl, activeCanvas);
+  }
+});
+
+
+// Add summary element to the active canvas
+document.getElementById('addSummaryBtn').addEventListener('click', function() {
+  const activeCanvas = getActiveCanvas(); // Assumes getActiveCanvas() exists
+  if (!activeCanvas) {
+      alert("Please select a canvas first.");
+      return;
+  }
+  const textSummary = document.getElementById('textSummary');
+  const summaryValue = textSummary.value.trim();
+  if (summaryValue) {
+    const summaryEl = document.createElement('p');
+    summaryEl.contentEditable = true;
+    summaryEl.className = 'editable-text'; // Add class for element.js logic
+    summaryEl.style.margin = "0";
+    summaryEl.style.padding = "8px";
+    summaryEl.style.maxHeight = "300px";
+    summaryEl.style.overflowY = "auto";
+    summaryEl.innerText = summaryValue;
+
+    createElement(summaryEl, activeCanvas);
+  }
+});
+
+
+// Add elementTextInput value to the active canvas
+document.getElementById('addElementTextBtn').addEventListener('click', function() {
+  const activeCanvas = getActiveCanvas(); // Assumes getActiveCanvas() exists
+  if (!activeCanvas) {
+      alert("Please select a canvas first.");
+      return;
+  }
+  const elementTextInput = document.getElementById('elementTextInput');
+  const elementValue = elementTextInput.value.trim();
+  if (elementValue) {
+    const el = document.createElement('div');
+    el.contentEditable = true;
+    el.className = 'editable-text'; // For consistency with other elements
+    el.style.margin = "0";
+    el.style.padding = "10px";
+    el.style.minHeight = "32px";
+    el.style.color = "#000";
+    el.style.fontFamily = "Arial";
+    el.style.fontSize = "12px";
+    el.innerText = elementValue;
+
+    createElement(el, activeCanvas);
   }
 });
 
@@ -243,8 +295,7 @@ function applyHighlightBgColor(hexColor) {
             if (activeTextElement) activeTextElement.style.backgroundColor = hexColor;
         }
     } else if (activeTextElement) {
-        // Apply solid color to the whole element if no selection
-        activeTextElement.style.backgroundColor = hexColor;
+        alert("Please select text first to apply highlight color.");
     }
 }
 
