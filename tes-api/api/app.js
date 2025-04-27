@@ -160,21 +160,24 @@ app.get('/scrape', async (req, res) => {
         }
       }
 
+      // If no images found in content, try to find a featured image or thumbnail
+      if (imageSources.length === 0) {
         // Look for common thumbnail or featured image selectors
-        const featuredImg = document.querySelector('.featured-image img') || 
+        const featuredImg = document.querySelector('.featured-image img') ||
                             document.querySelector('.thumbnail img') ||
                             document.querySelector('meta[property="og:image"]');
-      
+
         if (featuredImg) {
-          const src = featuredImg.getAttribute('content') || 
-                      featuredImg.getAttribute('data-src') || 
+          const src = featuredImg.getAttribute('content') ||
+                      featuredImg.getAttribute('data-src') ||
                       featuredImg.getAttribute('src');
-        
+
           if (src && !src.startsWith('data:')) {
             const absoluteSrc = new URL(src, url).href;
             imageSources.push(absoluteSrc);
           }
         }
+      }
     // Filter images by size (at least 400px in width or height)
     let images = [];
     let thumbnail = "";
