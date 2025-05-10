@@ -576,6 +576,13 @@ select {
   gap: 16px;
   animation: modalPopIn 0.18s cubic-bezier(.4,1.4,.6,1) both;
 }
+
+.modal-content {
+  max-width: 65vw; /* Set max-width for modal content */
+  width: auto; /* Allow width to adjust based on content and max-width */
+  background: #111;
+}
+
 @keyframes modalPopIn {
   0% { transform: scale(0.92) translateY(30px); opacity: 0; }
   100% { transform: scale(1) translateY(0); opacity: 1; }
@@ -1152,4 +1159,119 @@ input[type="file"]:hover::file-selector-button {
 
 .site-nav a:hover {
   color: #000; /* Darker color on hover */
+}
+
+/* =========================
+   Dark Mode Theme
+   ========================= */
+[data-theme="dark"] {
+  --primary-color: #90caf9;
+  --secondary-color: #181a1b;
+  --text-color: #e0e0e0;
+  --border-color: #333;
+  --shadow-color: rgba(0,0,0,0.7);
+  --font-family: 'Inter', sans-serif;
+}
+
+[data-theme="dark"] body,
+[data-theme="dark"] .controls,
+[data-theme="dark"] .canvas-container,
+[data-theme="dark"] .add-canvas-container,
+[data-theme="dark"] .modal-box,
+[data-theme="dark"] .action-buttons,
+[data-theme="dark"] .download-container,
+[data-theme="dark"] .edit-panel,
+[data-theme="dark"] .site-header,
+[data-theme="dark"] .thumbnail,
+[data-theme="dark"] .thumbnail.active-thumbnail,
+[data-theme="dark"] .add-slide-btn {
+  background-color: var(--secondary-color) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .canvas,
+[data-theme="dark"] #canvas {
+  background-color: #23272a !important;
+  box-shadow: 0 4px 15px var(--shadow-color);
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background: #23272a;
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] button,
+[data-theme="dark"] .create-post-btn {
+  background-color: var(--primary-color);
+  color: #181a1b;
+}
+
+[data-theme="dark"] .modal-box {
+  background: #23272a;
+  color: var(--text-color);
+}
+
+[data-theme="dark"] .controls h1,
+[data-theme="dark"] .site-title {
+  color: var(--primary-color);
+}
+
+/* Template Modal Styles */
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* 4 columns, responsive */
+  gap: 15px; /* Space between template options */
+  margin-top: 20px;
+}
+
+.template-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.1s ease;
+  background-color: var(--secondary-color); /* Use secondary color for background */
+}
+
+.template-option:hover {
+  border-color: var(--primary-color);
+  transform: scale(1.03);
+}
+
+.template-option img {
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border-color); /* Add a subtle border to images */
+}
+
+.template-option span {
+  font-size: 0.9em;
+  color: var(--text-color); /* Use text color for label */
+  text-align: center;
+}
+
+/* Dark mode adjustments for template options */
+[data-theme="dark"] .template-option {
+  background-color: #23272a !important; /* Darker background for dark mode */
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .template-option img {
+   border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .template-option span {
+  color: var(--text-color) !important;
+}
+[data-theme="dark"] .modal-content {
+  background-color: #111;
 }

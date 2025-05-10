@@ -112,7 +112,7 @@ function getEventPosition(e) {
 
 
 // Create an element on the specified canvas
-function createElement(content, targetCanvas) {
+function createElement(content, eltype, targetCanvas) {
   if (!targetCanvas) {
     console.error("Target canvas not provided for createElement");
     return null;
@@ -129,11 +129,12 @@ function createElement(content, targetCanvas) {
       // Decide if you want to proceed without a text panel or return null
   }
 
+
   const wrapper = document.createElement('div');
   wrapper.style.position = 'absolute';
   // Check if content is from auto-inserted image (assuming class is still relevant)
   if (content instanceof HTMLElement && content.classList.contains('autoTextInserted')) {
-    wrapper.className = 'element autoTextInserted'; // Keep element class for selection
+    wrapper.className = `element autoTextInserted ${eltype || ''}`; // Keep element class for selection
     wrapper.style.width = '370px';
     wrapper.style.height = '85px';
     wrapper.style.left = '30px';
@@ -142,11 +143,11 @@ function createElement(content, targetCanvas) {
     wrapper.style.fontSize = '20px';
     wrapper.style.bottom = '0px';
   } else {
-    wrapper.className = 'element'; // Keep element class
+    wrapper.className = `element ${eltype || ''}`; // Keep element class
     wrapper.style.width = '400px';
     wrapper.style.height = 'auto';
+    console.log("dari sini");
   }
-
   const contentDiv = document.createElement('div');
   contentDiv.className = 'content';
   contentDiv.style.width = '100%';
@@ -167,6 +168,7 @@ function createElement(content, targetCanvas) {
     content.style.display = 'block';
     contentDiv.appendChild(content);
   } else if (content instanceof HTMLElement && content.classList.contains('editable-text')) {
+    console.log("dari sini 2");
     wrapper.style.zIndex = '99999'; // Set z-index for text elements
     // If it's already an editable text element (e.g., from description)
     const textElement = content; // Reuse the element
@@ -188,7 +190,7 @@ function createElement(content, targetCanvas) {
     textElement.style.margin = '0';
     textElement.style.padding = '8px';
     textElement.style.boxSizing = 'border-box';
-
+    console.log("dari element");
     textElement.addEventListener('click', function(e) {
       e.stopPropagation();
       activateElement(wrapper); // Activate the wrapper

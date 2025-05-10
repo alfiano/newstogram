@@ -16,21 +16,51 @@
     <div class="site-title">Newstogram</div>
     <nav class="site-nav">
       <ul>
-        <li><a href="#">Login</a></li>
-        <li><a href="#">Akun</a></li>
+        <li><a href="#" id="loginBtn">Login</a></li>
+        <li><a href="#" id="akunBtn">Akun</a></li>
       </ul>
+      <button id="theme-toggle" style="margin-left: 15px;">Toggle Theme</button> <!-- Added Theme Toggle Button -->
     </nav>
   </header>
   <!-- Loader Modal -->
   <div id="templateModal" class="modal" style="display:none;">
-    <div class="modal-content" style="max-width:400px;margin:auto;padding:24px;position:relative;background:#fff;">
-      <span id="closeTemplateModal" style="position:absolute;top:8px;right:16px;cursor:pointer;font-size:24px;color:#333">&times;</span>
+    <div class="modal-content" style="margin:auto;padding:24px;position:relative;">
+      <span id="closeTemplateModal" style="position:absolute;top:8px;right:16px;cursor:pointer;font-size:24px;">&times;</span>
       <h2>Select Template</h2>
-      <div id="templateOptions">
-        <!-- Template options will be added here by JavaScript -->
-        <button class="template-option" data-template-id="template1">Template 1</button>
-        <button class="template-option" data-template-id="template2">Template 2</button>
-        <!-- Add more template buttons as needed -->
+      <div id="templateOptions" class="template-grid">
+        <!-- Template options will be image selects -->
+        <div class="template-option" data-template-id="template1">
+          <img src="assets/placeholder-template-1.png" alt="Template 1 Placeholder">
+          <span>Template 1</span>
+        </div>
+        <div class="template-option" data-template-id="template2">
+          <img src="assets/placeholder-template-2.png" alt="Template 2 Placeholder">
+          <span>Template 2</span>
+        </div>
+        <div class="template-option" data-template-id="template3">
+          <img src="assets/placeholder-template-3.png" alt="Template 3 Placeholder">
+          <span>Template 3</span>
+        </div>
+        <div class="template-option" data-template-id="template4">
+          <img src="assets/placeholder-template-4.png" alt="Template 4 Placeholder">
+          <span>Template 4</span>
+        </div>
+        <div class="template-option" data-template-id="template5">
+          <img src="assets/placeholder-template.png" alt="Template 5 Placeholder">
+          <span>Template 5</span>
+        </div>
+        <div class="template-option" data-template-id="template6">
+          <img src="assets/placeholder-template.png" alt="Template 6 Placeholder">
+          <span>Template 6</span>
+        </div>
+        <div class="template-option" data-template-id="template7">
+          <img src="assets/placeholder-template.png" alt="Template 7 Placeholder">
+          <span>Template 7</span>
+        </div>
+        <div class="template-option" data-template-id="template8">
+          <img src="assets/placeholder-template.png" alt="Template 8 Placeholder">
+          <span>Template 8</span>
+        </div>
       </div>
     </div>
   </div>
@@ -288,5 +318,7 @@
       }
     });
   </script>
+  <!-- Tambahkan div member area -->
+  <div id="memberArea" style="display:none"></div>
 </body>
 </html>

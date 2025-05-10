@@ -4,13 +4,77 @@ import { JSDOM } from 'jsdom';
 import OpenAI from 'openai/index.mjs';
 import axios from 'axios';
 import probe from 'probe-image-size'; // Add this new import
+// Tambahan untuk member area
+import session from 'express-session';
+import passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import mysql from 'mysql2/promise';
+
+// Koneksi MySQL
+const db = await mysql.createConnection({
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASS || '',
+  database: process.env.DB_NAME || 'newstogram'
+});
+
+// User serialization
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+passport.deserializeUser(async (id, done) => {
+  try {
+    const [rows] = await db.execute('SELECT * FROM users WHERE id = ?', [id]);
+    done(null, rows[0]);
+  } catch (err) {
+    done(err);
+  }
+});
+
+// Google OAuth Strategy
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: process.env.GOOGLE_CALLBACK_URL || '/auth/google/callback',
+}, async (accessToken, refreshToken, profile, done) => {
+  try {
+    // Cari user berdasarkan google_id
+    const [rows] = await db.execute('SELECT * FROM users WHERE google_id = ?', [profile.id]);
+    if (rows.length > 0) {
+      return done(null, rows[0]);
+    } else {
+      // Insert user baru
+      const [result] = await db.execute(
+        'INSERT INTO users (nama, email, google_id) VALUES (?, ?, ?)',
+        [profile.displayName, profile.emails[0].value, profile.id]
+      );
+      const [newUserRows] = await db.execute('SELECT * FROM users WHERE id = ?', [result.insertId]);
+      return done(null, newUserRows[0]);
+    }
+  } catch (err) {
+    return done(err);
+  }
+}));
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*'
+  origin: 'http://localhost:8080',
+  credentials: true
 }));
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'secret', // Default name 'connect.sid' will be used
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // Keep false for HTTP localhost development
+    sameSite: 'lax'  // Explicitly set SameSite to Lax
+    // Removed explicit name and domain to rely on defaults
+  }
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -51,7 +115,18 @@ app.get('/stream-image', async (req, res) => {
   }
 });
 
+// Middleware to log session and user before scrape
+app.use('/scrape', (req, res, next) => {
+  console.log('--- [SCRAPE Middleware] ---');
+  console.log('req.sessionID (in /scrape middleware):', req.sessionID);
+  console.log('req.session (in /scrape middleware):', req.session);
+  console.log('req.user (in /scrape middleware):', req.user);
+  next();
+});
+
 app.get('/scrape', async (req, res) => {
+  console.log('--- [SCRAPE Handler] ---');
+  console.log('User di /scrape:', req.user);
   const url = req.query.url;
   if (!url) {
     return res.status(400).json({ error: "Parameter 'url' wajib disertakan." });
@@ -161,7 +236,7 @@ app.get('/scrape', async (req, res) => {
       }
 
       // If no images found in content, try to find a featured image or thumbnail
-      if (imageSources.length === 0) {
+  //    if (imageSources.length === 0) {
         // Look for common thumbnail or featured image selectors
         const featuredImg = document.querySelector('.featured-image img') ||
                             document.querySelector('.thumbnail img') ||
@@ -177,7 +252,7 @@ app.get('/scrape', async (req, res) => {
             imageSources.push(absoluteSrc);
           }
         }
-      }
+  //    }
     // Filter images by size (at least 400px in width or height)
     let images = [];
     let thumbnail = "";
@@ -282,9 +357,88 @@ Content: ${originalContent}`;
       thumbnail: thumbnail,
       summary: summaryText
     });
+    // Kurangi kredit user jika login
+    if (req.user && req.user.id) {
+      console.log('Akan mengurangi kredit user id:', req.user.id);
+      // Ambil kredit user saat ini
+      const [userRows] = await db.execute('SELECT kredit FROM users WHERE id = ?', [req.user.id]);
+      const currentKredit = userRows[0]?.kredit ?? 0;
+      console.log('Kredit user sebelum dikurangi:', currentKredit);
+      if (currentKredit > 0) {
+        await db.execute('UPDATE users SET kredit = kredit - 1 WHERE id = ?', [req.user.id]);
+        const [afterRows] = await db.execute('SELECT kredit FROM users WHERE id = ?', [req.user.id]);
+        console.log('Kredit user berhasil dikurangi, sisa:', afterRows[0]?.kredit);
+      } else {
+        console.log('Kredit user sudah 0, tidak dikurangi');
+      }
+    } else {
+      console.log('Tidak ada user login, kredit tidak dikurangi');
+    }
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.toString() });
+  }
+});
+
+// ========== AUTH ROUTES ==========
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+app.get('/auth/google/callback', passport.authenticate('google', {
+  failureRedirect: '/login',
+  session: true
+}), (req, res) => {
+  // Log session after login
+  console.log('--- [AUTH GOOGLE CALLBACK] ---');
+  console.log('req.sessionID (after login):', req.sessionID);
+  console.log('req.session (after login):', req.session);
+  console.log('req.user (after login, from passport):', req.user); // req.user should be populated here by passport
+  res.redirect((process.env.FRONTEND_URL || '') + '/member.html');
+});
+
+app.get('/auth/me', (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+  res.json({ id: req.user.id, nama: req.user.nama, email: req.user.email });
+});
+
+app.get('/logout', (req, res) => {
+  req.logout(() => {
+    res.json({ success: true });
+  });
+});
+
+// Middleware proteksi
+function isAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) return next();
+  res.status(401).json({ error: 'Unauthorized' });
+}
+
+// Contoh endpoint create post (hanya untuk user login)
+app.post('/create-post', isAuthenticated, async (req, res) => {
+  // Di sini logika create post, misal insert ke database
+  res.json({ success: true, message: 'Post created by user', user: req.user });
+});
+
+// Endpoint ambil data user dari database langsung (bukan session)
+app.get('/api/user/:id', isAuthenticated, async (req, res) => {
+  try {
+    const [rows] = await db.execute('SELECT id, nama, email, kredit FROM users WHERE id = ?', [req.params.id]);
+    if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Endpoint untuk klaim kredit (tambah 5 kredit)
+app.post('/api/user/claim-credit', isAuthenticated, async (req, res) => {
+  try {
+    // Tambah 5 kredit ke user yang sedang login
+    await db.execute('UPDATE users SET kredit = kredit + 5 WHERE id = ?', [req.user.id]);
+    // Ambil data user terbaru
+    const [rows] = await db.execute('SELECT id, nama, email, kredit FROM users WHERE id = ?', [req.user.id]);
+    res.json({ success: true, kredit: rows[0].kredit });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -293,3 +447,13 @@ app.listen(port, () => {
 });
 
 export default app;
+
+// ===== INSTRUKSI SQL: Buat tabel users di MySQL =====
+// CREATE TABLE users (
+//   id INT AUTO_INCREMENT PRIMARY KEY,
+//   nama VARCHAR(255),
+//   email VARCHAR(255) UNIQUE,
+//   google_id VARCHAR(64) UNIQUE,
+//   kredit INT DEFAULT 0,
+//   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+// );

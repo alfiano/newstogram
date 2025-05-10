@@ -33,7 +33,7 @@ function toDataURLProxy(url) {
       // Use our backend API to scrape the website entered by the user
       const backendApiUrl = `${endpoint}/scrape?url=${encodeURIComponent(userUrl)}&lang=${encodeURIComponent(language)}`;
       
-      fetch(backendApiUrl)
+      fetch(backendApiUrl, { credentials: 'include' }) // Added credentials: 'include'
         .then(response => response.json())
         .then(data => {
           const textTitle = document.getElementById('textTitle');
@@ -81,6 +81,7 @@ function toDataURLProxy(url) {
                   imgEl.src = dataUrl;
                   imgEl.alt = "Gambar " + (index + 1);
                   imgEl.addEventListener('click', function() {
+                    const eltype = "img-api";
                     const activeCanvas = getActiveCanvas(); // Get active canvas
                     if (!activeCanvas) {
                         alert("Please select a canvas first.");
@@ -89,7 +90,7 @@ function toDataURLProxy(url) {
                     const imgObj = new Image();
                     imgObj.src = dataUrl;
                     imgObj.onload = function() {
-                      createElement(imgObj, activeCanvas); // Pass active canvas
+                      createElement(imgObj, eltype, activeCanvas); // Pass active canvas
                     }
                   });
                   imagePanel.appendChild(imgEl);
@@ -106,7 +107,7 @@ function toDataURLProxy(url) {
                   imgObj.src = dataUrl;
                   imgObj.onload = function() {
                     imgObj.style.zIndex = 1;
-                    createElement(imgObj, activeCanvas); // Pass active canvas
+                    createElement(imgObj, 'img-api',activeCanvas); // Pass active canvas
                   }
                 })
                 .catch(err => console.error('Error auto inserting image:', err));
@@ -122,7 +123,7 @@ function toDataURLProxy(url) {
             imgObj.onload = function() {
               imgObj.dataset.isGradient = 'true'; // Add data attribute to identify gradient layer
               // z-index is handled in createElement based on data attribute
-              createElement(imgObj, activeCanvas); // Pass active canvas
+              createElement(imgObj, 'img-api', activeCanvas); // Pass active canvas
             }
             imgObj.onerror = function() {
               console.error('Error loading gradient_layer.png');
@@ -131,7 +132,7 @@ function toDataURLProxy(url) {
 
           if (data.judul && Array.isArray(data.judul) && data.judul.length > 0) {
               const activeCanvas = getActiveCanvas(); // Get active canvas
-              if (activeCanvas) { // Only add if a canvas is active
+              if (activeCanvas) {
                   const titleEl = document.createElement('h3'); // Create the editable element directly
                   titleEl.contentEditable = true;
                   titleEl.className = 'editable-text autoTextInserted'; // Add classes
@@ -144,7 +145,7 @@ function toDataURLProxy(url) {
                   //titleEl.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
                   titleEl.style.zIndex = 10; // Maybe apply to wrapper instead
                   titleEl.innerText = data.judul[0];
-                  createElement(titleEl, activeCanvas); // Pass element and active canvas
+                  createElement(titleEl, 'text-title', activeCanvas); // Pass element and active canvas
               }
             }
         })
@@ -172,7 +173,7 @@ function toDataURLProxy(url) {
         const img = new Image();
         img.src = evt.target.result;
         img.onload = function() {
-          createElement(img, activeCanvas); // Pass active canvas
+          createElement(img, 'img-upload', activeCanvas); // Pass active canvas
         }
       };
       reader.readAsDataURL(file);

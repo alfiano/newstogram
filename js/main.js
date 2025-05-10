@@ -336,7 +336,9 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         // Jika fetchDataBtn sudah dihapus, trigger custom event atau lakukan fetch di sini
         // Implementasikan fetch langsung ke /scrape
-        fetch(`/scrape?url=${encodeURIComponent(url)}&lang=${encodeURIComponent(lang)}`)
+        fetch(`${API_BASE}/scrape?url=${encodeURIComponent(url)}&lang=${encodeURIComponent(lang)}`, { // Use API_BASE
+          credentials: 'include'
+        })
           .then(response => response.json())
           .then(data => {
             // Set judul options
@@ -380,8 +382,27 @@ document.addEventListener('DOMContentLoaded', function() {
           .finally(() => {
             modalOverlay.style.display = 'none';
             modalLoader.style.display = 'none';
-          });
+        });
       }
+    });
+  }
+
+  // --- Theme Toggle Logic ---
+  const themeToggleButton = document.getElementById('theme-toggle');
+  const docElement = document.documentElement; // The <html> element
+  const currentTheme = localStorage.getItem('theme');
+
+  // Apply saved theme on load
+  if (currentTheme) {
+    docElement.setAttribute('data-theme', currentTheme);
+  }
+
+  // Toggle button listener
+  if (themeToggleButton) {
+    themeToggleButton.addEventListener('click', () => {
+      const newTheme = docElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      docElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
     });
   }
 });
@@ -593,7 +614,7 @@ function applyTemplate(templateId) {
             console.log("Applying Template 2");
             // Template 2: Image + Summary
             if (summaryText) {
-                 const summaryElement = createElement(summaryText, activeCanvas);
+                 const summaryElement = createElement(summaryText, 'text-summary', activeCanvas);
                  if(summaryElement) {
                     summaryElement.style.top = '150px'; // Example positioning
                     summaryElement.style.left = '50px'; // Example positioning
@@ -609,3 +630,89 @@ function applyTemplate(templateId) {
             break;
     }
 }
+
+// ========== MEMBER AREA LOGIC ==========
+const API_BASE = 'http://localhost:3000'; // Ganti jika backend beda host
+
+function checkLoginStatus() {
+  return fetch(`${API_BASE}/auth/me`, {
+    credentials: 'include'
+  })
+    .then(res => res.ok ? res.json() : null)
+    .catch(() => null);
+}
+
+function showLoginButton() {
+  const loginBtn = document.querySelector('a[href="#"], .site-nav a[href="#"]');
+  if (loginBtn) {
+    loginBtn.textContent = 'Login';
+    loginBtn.onclick = (e) => {
+      e.preventDefault();
+      window.location.href = `${API_BASE}/auth/google`;
+    };
+  }
+}
+
+function showLogoutButton(user) {
+  const loginBtn = document.querySelector('a[href="#"], .site-nav a[href="#"]');
+  if (loginBtn) {
+    loginBtn.textContent = 'Logout (' + user.nama + ')';
+    loginBtn.onclick = (e) => {
+      e.preventDefault();
+      fetch(`${API_BASE}/logout`, { credentials: 'include' })
+        .then(() => window.location.reload());
+    };
+  }
+}
+
+function updateCreatePostButton(isLoggedIn) {
+  const createBtn = document.getElementById('openModalBtn');
+  if (createBtn) {
+    createBtn.disabled = !isLoggedIn;
+    createBtn.style.opacity = isLoggedIn ? 1 : 0.5;
+    createBtn.title = isLoggedIn ? '' : 'Login untuk membuat post';
+  }
+}
+
+// On page load, cek login
+window.addEventListener('DOMContentLoaded', async () => {
+  const user = await checkLoginStatus();
+  if (user) {
+    showLogoutButton(user);
+    updateCreatePostButton(true);
+    // Tampilkan member area jika ada
+    showMemberArea(user);
+  } else {
+    showLoginButton();
+    updateCreatePostButton(false);
+  }
+});
+
+// ========== MEMBER AREA PAGE ==========
+function showMemberArea(user) {
+  let memberDiv = document.getElementById('memberArea');
+  if (!memberDiv) {
+    memberDiv = document.createElement('div');
+    memberDiv.id = 'memberArea';
+    memberDiv.style = 'position:fixed;top:60px;right:20px;background:#fff;padding:16px;border-radius:8px;box-shadow:0 2px 8px #0002;z-index:1000;';
+    document.body.appendChild(memberDiv);
+  }
+  memberDiv.innerHTML = `<b>Member Area</b><br>Nama: ${user.nama}<br>Email: ${user.email}<br><button id="closeMemberArea">Tutup</button>`;
+  document.getElementById('closeMemberArea').onclick = () => memberDiv.remove();
+}
+
+// Event handler untuk tombol Akun
+window.addEventListener('DOMContentLoaded', () => {
+  const akunBtn = document.getElementById('akunBtn');
+  if (akunBtn) {
+    akunBtn.onclick = async (e) => {
+      e.preventDefault();
+      const user = await checkLoginStatus();
+      if (user) {
+        window.location.href = 'member.html';
+      } else {
+        window.location.href = `${API_BASE}/auth/google`;
+      }
+    };
+  }
+});

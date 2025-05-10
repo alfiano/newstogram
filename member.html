@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Member Area - Newstogram</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-title">Newstogram</div>
+    <nav class="site-nav">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="#" id="logoutBtn">Logout</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main style="max-width:400px;margin:40px auto;padding:24px;background:#fff;border-radius:10px;box-shadow:0 2px 12px #0001;">
+    <h2>Member Area</h2>
+    <div id="userInfo">
+      <p>Loading...</p>
+    </div>
+    <div id="kreditSection" style="margin-top:24px;display:none;">
+      <b>Kredit:</b> <span id="kreditValue">0</span><br>
+      <button id="claimKreditBtn">Klaim 5 Kredit</button>
+      <span id="claimStatus" style="margin-left:10px;color:green;"></span>
+    </div>
+  </main>
+  <script>
+    const API_BASE = 'http://localhost:3000'; // Ganti jika backend beda host
+    async function getSessionUser() {
+      const res = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
+      if (!res.ok) return null;
+      return res.json();
+    }
+    async function getUserFromDB(id) {
+      const res = await fetch(`${API_BASE}/api/user/` + id, { credentials: 'include' });
+      if (!res.ok) return null;
+      return res.json();
+    }
+    async function renderUser() {
+      const sessionUser = await getSessionUser();
+      if (!sessionUser) {
+        window.location.href = 'index.html';
+        return;
+      }
+      const dbUser = await getUserFromDB(sessionUser.id);
+      const userInfo = document.getElementById('userInfo');
+      const kreditSection = document.getElementById('kreditSection');
+      if (dbUser) {
+        userInfo.innerHTML = `<b>Nama:</b> ${dbUser.nama}<br><b>Email:</b> ${dbUser.email}`;
+        document.getElementById('kreditValue').textContent = dbUser.kredit ?? 0;
+        const claimBtn = document.getElementById('claimKreditBtn');
+        if (dbUser.kredit > 0) {
+          claimBtn.style.display = 'none';
+        } else {
+          claimBtn.style.display = '';
+        }
+        kreditSection.style.display = '';
+      } else {
+        userInfo.innerHTML = '<span style="color:red">User tidak ditemukan di database.</span>';
+        kreditSection.style.display = 'none';
+      }
+    }
+    renderUser();
+    // Logout button
+    document.getElementById('logoutBtn').onclick = async (e) => {
+      e.preventDefault();
+      await fetch(`${API_BASE}/logout`, { credentials: 'include' });
+      window.location.href = 'index.html';
+    };
+    // Klaim kredit
+    document.getElementById('claimKreditBtn').onclick = async function() {
+      const btn = this;
+      btn.disabled = true;
+      document.getElementById('claimStatus').textContent = '';
+      const res = await fetch(`${API_BASE}/api/user/claim-credit`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('kreditValue').textContent = data.kredit;
+        document.getElementById('claimStatus').textContent = 'Berhasil klaim 5 kredit!';
+        btn.style.display = 'none';
+      } else {
+        document.getElementById('claimStatus').textContent = 'Gagal klaim kredit.';
+        document.getElementById('claimStatus').style.color = 'red';
+        btn.disabled = false;
+      }
+      setTimeout(() => {
+        document.getElementById('claimStatus').textContent = '';
+        document.getElementById('claimStatus').style.color = 'green';
+      }, 2000);
+    };
+  </script>
+</body>
+</html> 

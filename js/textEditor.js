@@ -28,7 +28,7 @@ document.getElementById('addTextBtn').addEventListener('click', function() {
     titleEl.innerText = selectedTitle;
 
     // Pass the editable element directly to createElement
-    createElement(titleEl, activeCanvas);
+    createElement(titleEl, 'text-title', activeCanvas);
   }
 });
 
@@ -51,7 +51,7 @@ document.getElementById('addTextareaBtn').addEventListener('click', function() {
     descEl.style.overflowY = "auto"; // Add scrollbar if content exceeds max height
     descEl.innerText = descriptionValue;
 
-    createElement(descEl, activeCanvas);
+    createElement(descEl, 'text-description', activeCanvas);
   }
 });
 
@@ -75,7 +75,7 @@ document.getElementById('addSummaryBtn').addEventListener('click', function() {
     summaryEl.style.overflowY = "auto";
     summaryEl.innerText = summaryValue;
 
-    createElement(summaryEl, activeCanvas);
+    createElement(summaryEl, 'text-summary', activeCanvas);
   }
 });
 
@@ -101,7 +101,7 @@ document.getElementById('addElementTextBtn').addEventListener('click', function(
     el.style.fontSize = "12px";
     el.innerText = elementValue;
 
-    createElement(el, activeCanvas);
+    createElement(el, 'text-input',  activeCanvas);
   }
 });
 

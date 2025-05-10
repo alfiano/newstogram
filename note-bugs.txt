@@ -17,3 +17,6 @@ theguardian.com
 eonline.com
 https://www.thesun.co.uk
 https://www.tribalfootball.com/
+https://people.com/
+
+add elemen identifier
