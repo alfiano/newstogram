@@ -1,5 +1,8 @@
 /* textEditor.js - Refactored for Multiple Canvases */
 
+import { getActiveCanvas } from './main.js';
+import { createElement, getActiveTextElement } from './element.js';
+
 // NOTE: Event listeners for controls (fontFamily, textColor, etc.)
 // will be attached dynamically in main.js when a canvas is created.
 
@@ -109,87 +112,8 @@ document.getElementById('addElementTextBtn').addEventListener('click', function(
 // --- Text Style Application Functions ---
 // These functions will be called by event listeners attached in main.js
 
-function applyFontFamily(fontFamily) {
-    const activeTextElement = getActiveTextElement();
-    if (currentSelectedWord) {
-        currentSelectedWord.style.fontFamily = fontFamily;
-    } else if (activeTextElement) {
-        activeTextElement.style.fontFamily = fontFamily;
-    }
-}
-
-function applyTextColor(color) {
-    const activeTextElement = getActiveTextElement();
-    if (currentSelectedWord) {
-        currentSelectedWord.style.color = color;
-    } else if (activeTextElement) {
-        activeTextElement.style.color = color;
-    }
-}
-
-function applyTextBgColor(color) {
-    const activeTextElement = getActiveTextElement();
-    // Apply to the correct element, considering opacity might be separate
-    const targetElement = currentSelectedWord || activeTextElement;
-    if (targetElement) {
-        // Get current opacity if exists
-        const currentBg = window.getComputedStyle(targetElement).backgroundColor;
-        const rgbaMatch = currentBg.match(/rgba?\([^)]+\)/);
-        let currentOpacity = 1;
-        if (rgbaMatch && rgbaMatch[0].includes('rgba')) {
-            const parts = rgbaMatch[0].split(',');
-            if (parts.length === 4) {
-                currentOpacity = parseFloat(parts[3]);
-            }
-        }
-        // Convert hex to rgb for rgba
-        const hexMatch = color.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
-        if (hexMatch) {
-            const r = parseInt(hexMatch[1], 16);
-            const g = parseInt(hexMatch[2], 16);
-            const b = parseInt(hexMatch[3], 16);
-            targetElement.style.backgroundColor = `rgba(${r}, ${g}, ${b}, ${currentOpacity})`;
-        } else {
-             targetElement.style.backgroundColor = color; // Fallback if not hex
-        }
-    }
-}
-
-function applyFontSize(size) {
-    const activeTextElement = getActiveTextElement();
-    if (currentSelectedWord) {
-        currentSelectedWord.style.fontSize = size + 'px';
-    } else if (activeTextElement) {
-        activeTextElement.style.fontSize = size + 'px';
-    }
-}
-
-function applyFontWeight() {
-    const activeTextElement = getActiveTextElement();
-    const targetElement = currentSelectedWord || activeTextElement;
-    if (targetElement) {
-        const currentWeight = window.getComputedStyle(targetElement).fontWeight;
-        // Handle numeric weights and 'bold'/'normal'
-        const isBold = currentWeight === 'bold' || parseInt(currentWeight) >= 700;
-        targetElement.style.fontWeight = isBold ? 'normal' : 'bold';
-    }
-}
-
-function applyBgOpacity(opacityPercent) {
-    const activeTextElement = getActiveTextElement();
-    const targetElement = currentSelectedWord || activeTextElement;
-    if (targetElement) {
-        const currentBgColor = window.getComputedStyle(targetElement).backgroundColor;
-        // Try to preserve the RGB part
-        const rgbMatch = currentBgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-        if (rgbMatch) {
-            targetElement.style.backgroundColor = `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${opacityPercent / 100})`;
-        } else {
-            // Fallback: Apply opacity to black or a default if color is complex/invalid
-             targetElement.style.backgroundColor = `rgba(0, 0, 0, ${opacityPercent / 100})`;
-        }
-    }
-}
+// The following functions (lines 112-192) are the older versions.
+// They will be removed as the revised versions below (starting line 195) are more complete.
 
 
 // --- Revised Style Application Functions ---
@@ -211,7 +135,7 @@ function getActiveSelectionRange() {
 }
 
 // Apply Font Family
-function applyFontFamily(fontFamily) {
+export function applyFontFamily(fontFamily) {
     const range = getActiveSelectionRange();
     if (range) {
         document.execCommand('fontName', false, fontFamily);
@@ -224,7 +148,7 @@ function applyFontFamily(fontFamily) {
 }
 
 // Apply Text Color
-function applyTextColor(color) {
+export function applyTextColor(color) {
     const range = getActiveSelectionRange();
     if (range) {
         document.execCommand('foreColor', false, color);
@@ -239,7 +163,7 @@ function applyTextColor(color) {
 // Apply Font Size
 // Note: execCommand('fontSize') uses 1-7. Mapping px to this is unreliable.
 // It's often better to wrap selection in a span for font size.
-function applyFontSize(size) {
+export function applyFontSize(size) {
     const range = getActiveSelectionRange();
     const activeTextElement = getActiveTextElement();
 
@@ -261,7 +185,7 @@ function applyFontSize(size) {
 }
 
 // Apply Font Weight (Bold)
-function applyFontWeight() {
+export function applyFontWeight() {
     const range = getActiveSelectionRange();
     if (range) {
         document.execCommand('bold', false, null);
@@ -276,7 +200,7 @@ function applyFontWeight() {
 }
 
 // Apply Text Highlight Background Color (Solid Color)
-function applyHighlightBgColor(hexColor) {
+export function applyHighlightBgColor(hexColor) {
     const range = getActiveSelectionRange();
     const activeTextElement = getActiveTextElement();
 
@@ -301,7 +225,7 @@ function applyHighlightBgColor(hexColor) {
 
 
 // Apply Element Wrapper Background Color and Opacity
-function applyElementBgColorWithOpacity(hexColor, opacityPercent) {
+export function applyElementBgColorWithOpacity(hexColor, opacityPercent) {
     const activeTextElement = getActiveTextElement();
     if (!activeTextElement) return;
 

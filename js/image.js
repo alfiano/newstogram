@@ -1,5 +1,8 @@
 /* image.js */
 
+import { getActiveCanvas, showLoader, hideLoader } from './main.js';
+import { createElement } from './element.js';
+
 // Convert image URL to Data URL using a proxy
 function toDataURLProxy(url) {
   //const endpoint = 'https://tes-api7.agep.web.id';

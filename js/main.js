@@ -1,5 +1,24 @@
 /* main.js - Multi-Canvas Management */
 
+import {
+    addCanvasDeactivationListener,
+    deactivateAllElements,
+    clearActiveTextElement,
+    createElement,
+    updateAllHandles,
+    getActiveTextElement,
+    // setActiveTextElement is called from element.js, not directly in main.js after review
+} from './element.js';
+
+import {
+    applyFontFamily,
+    applyTextColor,
+    applyFontSize,
+    applyFontWeight,
+    applyHighlightBgColor,
+    applyElementBgColorWithOpacity
+} from './textEditor.js';
+
 // --- Global State ---
 let activeCanvasElement = null; // Reference to the currently active canvas div (.canvas)
 let canvasCounter = 1; // To generate unique IDs
@@ -7,7 +26,7 @@ let canvasCounter = 1; // To generate unique IDs
 // --- Canvas Management ---
 
 // Function to get the currently active canvas element
-function getActiveCanvas() {
+export function getActiveCanvas() {
     return activeCanvasElement;
 }
 
@@ -461,15 +480,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // =========================
 // Loader Overlay Functions
 // =========================
-function showLoader() {
+export function showLoader(message = "Loading...") {
   const loader = document.getElementById('loaderModal');
-  if (loader) loader.classList.add('active');
+  if (loader) {
+    const messageElement = loader.querySelector('p');
+    if (messageElement) {
+      messageElement.textContent = message;
+    }
+    loader.classList.add('active');
+  }
 }
-function hideLoader() {
+export function hideLoader() {
   const loader = document.getElementById('loaderModal');
   if (loader) loader.classList.remove('active');
 }
-// Optional: expose globally
+// Optional: expose globally (can be kept for now if other non-module scripts might use them, but modules should import)
 window.showLoader = showLoader;
 window.hideLoader = hideLoader;
 
@@ -643,7 +668,7 @@ function checkLoginStatus() {
 }
 
 function showLoginButton() {
-  const loginBtn = document.querySelector('a[href="#"], .site-nav a[href="#"]');
+  const loginBtn = document.getElementById('loginBtn'); // Use ID for robustness
   if (loginBtn) {
     loginBtn.textContent = 'Login';
     loginBtn.onclick = (e) => {
@@ -654,7 +679,7 @@ function showLoginButton() {
 }
 
 function showLogoutButton(user) {
-  const loginBtn = document.querySelector('a[href="#"], .site-nav a[href="#"]');
+  const loginBtn = document.getElementById('loginBtn'); // Use ID for robustness
   if (loginBtn) {
     loginBtn.textContent = 'Logout (' + user.nama + ')';
     loginBtn.onclick = (e) => {

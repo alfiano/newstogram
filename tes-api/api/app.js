@@ -11,11 +11,15 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import mysql from 'mysql2/promise';
 
 // Koneksi MySQL
-const db = await mysql.createConnection({
+// Koneksi MySQL using a connection pool
+const db = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASS || '',
-  database: process.env.DB_NAME || 'newstogram'
+  database: process.env.DB_NAME || 'newstogram',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
 // User serialization
@@ -60,7 +64,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors({
-  origin: 'http://localhost:8080',
+  origin: ['http://localhost:8080', 'https://demo.agep.web.id'],
   credentials: true
 }));
 app.use(session({

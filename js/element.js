@@ -1,17 +1,131 @@
 /* element.js - Refactored for Multiple Canvases */
 
+import { AutoModel, AutoProcessor, RawImage } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1/+esm";
+
+// --- Background Removal Model Variables ---
+let model;
+let processor;
+let modelLoadingPromise = null;
+
+// --- Background Removal Model Initialization ---
+async function initializeBackgroundRemovalModel() {
+    if (model && processor) return true; // Already loaded
+    if (modelLoadingPromise) return modelLoadingPromise; // Loading in progress
+
+    modelLoadingPromise = (async () => {
+        try {
+            console.log("Loading background removal model...");
+            if (window.showLoader) window.showLoader("Model is loading, please wait...");
+
+            model = await AutoModel.from_pretrained("briaai/RMBG-1.4", {
+                config: { model_type: "custom" }, // Specify model type if not in config.json
+                quantized: true, // Use quantized model for smaller size & faster inference
+                progress_callback: (progress) => {
+                    console.log("Background removal model loading progress:", progress);
+                    // TODO: Update a more specific progress UI if available
+                }
+            });
+            processor = await AutoProcessor.from_pretrained("briaai/RMBG-1.4", {
+                config: { // Provide processor config if not in repo or to override
+                    do_normalize: true,
+                    do_pad: false,
+                    do_rescale: true,
+                    do_resize: true, // Resize input images to model's expected size
+                    image_mean: [0.5, 0.5, 0.5],
+                    feature_extractor_type: "ImageFeatureExtractor", // Important for some models
+                    image_std: [1, 1, 1],
+                    resample: 2, // PIL.Image.BILINEAR
+                    rescale_factor: 1 / 255, // Standard rescale factor
+                    size: { width: 1024, height: 1024 }, // Model's expected input size
+                },
+            });
+            console.log("Background removal model loaded successfully.");
+            if (window.hideLoader) window.hideLoader();
+            return true;
+        } catch (error) {
+            console.error("Error loading background removal model:", error);
+            if (window.hideLoader) window.hideLoader();
+            modelLoadingPromise = null; // Reset promise on error to allow retry
+            alert("Failed to load background removal model. Please check console and try again.");
+            return false;
+        }
+    })();
+    return modelLoadingPromise;
+}
+
+// --- Process Image for Background Removal ---
+// This function is used internally by event handlers within this module, so no export needed unless called from outside.
+async function processImageBackgroundRemoval(imgElementWrapper) {
+    if (!imgElementWrapper) return;
+    const imgContent = imgElementWrapper.querySelector('.content img');
+    if (!imgContent) {
+        console.error("Image content not found in wrapper for background removal.");
+        alert("Could not find the image to process.");
+        return;
+    }
+
+    const modelReady = await initializeBackgroundRemovalModel();
+    if (!modelReady) {
+        // Error already alerted in initialize function
+        return;
+    }
+
+    if (window.showLoader) window.showLoader("Removing background...");
+
+    try {
+        // Ensure image is loaded before processing, especially if src was just set
+        if (!imgContent.complete || imgContent.naturalWidth === 0) {
+            await new Promise((resolve, reject) => {
+                imgContent.onload = resolve;
+                imgContent.onerror = reject;
+            });
+        }
+
+        const image = await RawImage.fromURL(imgContent.src);
+
+        const { pixel_values } = await processor(image);
+        const { output } = await model({ input: pixel_values });
+
+        const mask = await RawImage.fromTensor(output[0].mul(255).to("uint8")).resize(
+            image.width,
+            image.height
+        );
+        image.putAlpha(mask);
+
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = image.width;
+        tempCanvas.height = image.height;
+        const ctx = tempCanvas.getContext("2d");
+        ctx.drawImage(image.toCanvas(), 0, 0);
+
+        imgContent.src = tempCanvas.toDataURL("image/png");
+        console.log("Background removed successfully.");
+        if (window.showLoader) window.showLoader("Background removed"); // Show success message
+        setTimeout(() => {
+            if (window.hideLoader) window.hideLoader();
+        }, 1500); // Hide loader after 1.5 seconds
+
+    } catch (error) {
+        console.error("Error removing background:", error);
+        alert("Failed to remove background. See console for details.");
+        if (window.hideLoader) window.hideLoader(); // Ensure loader is hidden on error
+    } finally {
+        // hideLoader is now called specifically after success (with delay) or immediately on error
+    }
+}
+
+
 // Deactivate all elements within a specific canvas or all canvases
-function deactivateAllElements(targetCanvas = null) {
+export function deactivateAllElements(targetCanvas = null) {
   const selector = targetCanvas ? `#${targetCanvas.id} .element` : '.element';
   document.querySelectorAll(selector).forEach(el => {
     el.classList.remove('active');
     // Hide handles associated with this element
-    // We assume handles are stored as properties on the element wrapper ('el')
-    // And that they are appended to the *canvas container*, not the wrapper itself.
     if (el.resizeHandle) el.resizeHandle.style.display = 'none';
     if (el.deleteBtn) el.deleteBtn.style.display = 'none';
     if (el.rotateHandle) el.rotateHandle.style.display = 'none';
-    if (el.moveBtn) el.moveBtn.style.display = 'none'; // Check for moveBtn as well
+    if (el.moveBtn) el.moveBtn.style.display = 'none';
+    if (el.removeBgBtn) el.removeBgBtn.style.display = 'none'; // Hide new button
   });
   // Hide the associated text edit panel if it exists for this canvas
   if (targetCanvas) {
@@ -22,7 +136,7 @@ function deactivateAllElements(targetCanvas = null) {
 
 
 // Update all handles for an element relative to its canvas container
-function updateAllHandles(wrapper) {
+export function updateAllHandles(wrapper) {
   if (!wrapper || !wrapper.parentElement) return; // Ensure wrapper and parent exist
 
   // Find the parent canvas container dynamically
@@ -86,16 +200,21 @@ function updateAllHandles(wrapper) {
   // Values are offsets from the element's center *before* rotation
 
   // Delete Button (Top-Left Corner) - Adjusted slightly outwards
-  positionHandle(wrapper.deleteBtn, -halfWidth - 5, -halfHeight - 5);
+  positionHandle(wrapper.deleteBtn, -halfWidth - 10, -halfHeight - 10); // Increased offset
 
   // Resize Handle (Bottom-Right Corner) - Adjusted slightly outwards
-  positionHandle(wrapper.resizeHandle, halfWidth + 5, halfHeight + 5);
+  positionHandle(wrapper.resizeHandle, halfWidth + 10, halfHeight + 10); // Increased offset
 
   // Rotate Handle (Top-Center) - Adjusted slightly outwards vertically
-  positionHandle(wrapper.rotateHandle, 0, -halfHeight - 5);
+  positionHandle(wrapper.rotateHandle, 0, -halfHeight - 10); // Increased offset
 
   // Move Button (Bottom-Center) - Adjusted slightly outwards vertically
-  positionHandle(wrapper.moveBtn, 0, halfHeight + 5);
+  positionHandle(wrapper.moveBtn, 0, halfHeight + 10); // Increased offset
+
+  // Remove Background Button (Top-Right Corner, for images) - Adjusted slightly outwards
+  if (wrapper.removeBgBtn) {
+    positionHandle(wrapper.removeBgBtn, halfWidth + 10, -halfHeight - 10); // Increased offset
+  }
 }
 
 // Get mouse or touch position
@@ -112,7 +231,7 @@ function getEventPosition(e) {
 
 
 // Create an element on the specified canvas
-function createElement(content, eltype, targetCanvas) {
+export function createElement(content, eltype, targetCanvas) {
   if (!targetCanvas) {
     console.error("Target canvas not provided for createElement");
     return null;
@@ -167,6 +286,37 @@ function createElement(content, eltype, targetCanvas) {
     content.style.height = '100%';
     content.style.display = 'block';
     contentDiv.appendChild(content);
+
+    // --- Create Remove Background Button for general images ---
+    const removeBgBtn = document.createElement('button');
+    removeBgBtn.innerHTML = ' BG '; // Placeholder, consider SVG icon
+    removeBgBtn.className = 'control-button remove-bg-button';
+    removeBgBtn.title = 'Remove Background';
+    removeBgBtn.style.position = 'absolute';
+    removeBgBtn.style.zIndex = '99999'; // Same as other controls
+    removeBgBtn.style.touchAction = 'none';
+    removeBgBtn.style.display = 'none'; // Initially hidden
+    removeBgBtn.style.fontSize = '10px'; // Smaller text
+    removeBgBtn.style.padding = '2px 4px'; // Adjust padding
+    canvasContainer.appendChild(removeBgBtn);
+    wrapper.removeBgBtn = removeBgBtn;
+
+    // Add event listeners for remove background
+    ['click', 'touchend'].forEach(eventType => {
+        removeBgBtn.addEventListener(eventType, async function (e) {
+            e.stopPropagation();
+            e.preventDefault();
+            if (!wrapper.classList.contains('active')) return;
+            // Ensure model is loaded before processing, can be called multiple times safely
+            const modelReady = await initializeBackgroundRemovalModel();
+            if (modelReady) {
+                await processImageBackgroundRemoval(wrapper);
+            } else {
+                // initializeBackgroundRemovalModel will alert if there's an issue
+            }
+        }, { capture: true });
+    });
+
   } else if (content instanceof HTMLElement && content.classList.contains('editable-text')) {
     console.log("dari sini 2");
     wrapper.style.zIndex = '99999'; // Set z-index for text elements
@@ -225,6 +375,7 @@ function createElement(content, eltype, targetCanvas) {
           if (wrapper.deleteBtn) wrapper.deleteBtn.remove();
           if (wrapper.moveBtn) wrapper.moveBtn.remove();
           if (wrapper.rotateHandle) wrapper.rotateHandle.remove();
+          if (wrapper.removeBgBtn) wrapper.removeBgBtn.remove(); // Remove new button
           wrapper.remove();
           // Check if the deleted element contained the globally active text element
           if (getActiveTextElement() && contentDiv.contains(getActiveTextElement())) {
@@ -494,7 +645,7 @@ function createElement(content, eltype, targetCanvas) {
 let _activeTextElement = null;
 let _activeTextEditPanel = null;
 
-function setActiveTextElement(textElement, textEditPanel) {
+export function setActiveTextElement(textElement, textEditPanel) {
     _activeTextElement = textElement;
     _activeTextEditPanel = textEditPanel; // Store the associated panel
 
@@ -557,15 +708,15 @@ function setActiveTextElement(textElement, textEditPanel) {
     console.log("Active text element set for panel:", _activeTextEditPanel.id);
 }
 
-function getActiveTextElement() {
+export function getActiveTextElement() {
     return _activeTextElement;
 }
 
-function getActiveTextEditPanel() {
+function getActiveTextEditPanel() { // Not explicitly used by main.js, so no export for now
     return _activeTextEditPanel;
 }
 
-function clearActiveTextElement() {
+export function clearActiveTextElement() {
     if (_activeTextEditPanel) {
         _activeTextEditPanel.style.display = 'none';
     }
@@ -574,7 +725,7 @@ function clearActiveTextElement() {
     console.log("Active text element cleared.");
 }
 
-// Helper function to convert rgb to hex
+// Helper function to convert rgb to hex (used internally)
 function rgb2hex(rgb) {
   if (!rgb || rgb.startsWith('#')) return rgb; // Already hex or invalid
   const match = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
@@ -587,7 +738,7 @@ function rgb2hex(rgb) {
 
 
 // Function to add the deactivation listener to a specific canvas
-function addCanvasDeactivationListener(canvasElement) {
+export function addCanvasDeactivationListener(canvasElement) {
     ['click', 'touchend'].forEach(eventType => {
         canvasElement.addEventListener(eventType, function(e) {
             // Deactivate if clicking directly on the canvas background

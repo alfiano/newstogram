@@ -29,6 +29,7 @@
   </main>
   <script>
     const API_BASE = 'http://localhost:3000'; // Ganti jika backend beda host
+   // const API_BASE = 'https://tes-api7.agep.web.id'; // Ganti jika backend beda host
     async function getSessionUser() {
       const res = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
       if (!res.ok) return null;
